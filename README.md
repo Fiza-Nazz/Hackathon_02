@@ -1,126 +1,61 @@
-# AI-Native Todo Application (Phase II - Full-Stack Web Application)
+# Zenith-Flow: The AI-Native Hybrid Workspace
 
-## Overview
-This is a full-stack web application built with Next.js (frontend) and FastAPI (backend) that allows users to manage their tasks with secure authentication.
+Zenith-Flow is a professional-grade, full-stack task management ecosystem that bridges the gap between high-end web aesthetics and developer-centric CLI efficiency. Built with a robust **FastAPI** backend, it offers two powerful interfaces to manage your productivity.
 
-## Features
-- User registration and authentication
-- Create, read, update, delete tasks
-- Mark tasks as complete/incomplete
-- Responsive web interface
-- JWT-based authentication
-- PostgreSQL database
+---
 
-## Tech Stack
-- **Frontend**: Next.js, TypeScript, Tailwind CSS, Zustand
-- **Backend**: FastAPI, SQLModel, PostgreSQL, JWT
-- **Authentication**: JWT tokens with bcrypt password hashing
-- **State Management**: Zustand
-- **HTTP Client**: Axios
+## 🚀 Dual Interface Architecture
 
-## Prerequisites
-- Node.js (v14 or higher)
-- Python (v3.8 or higher)
-- PostgreSQL database
-- pip (Python package manager)
+### 1. Modern Web Application (The "Experience" Layer)
+A stunning, responsive web interface designed for users who value visual excellence and interactivity.
+- **3D Immersive UI:** Featuring interactive 3D models and smooth CSS/Framer Motion animations.
+- **Glassmorphism Design:** A premium, modern aesthetic with vibrant gradients and blur effects.
+- **Real-time Updates:** Reactive state management using Zustand and Axios.
+- **Tech Stack:** Next.js 14, TypeScript, Tailwind CSS, Three.js.
 
-## Setup Instructions
+### 2. Powerful CLI Companion (The "Efficiency" Layer)
+A developer-first command-line tool for lightning-fast task management directly from the terminal.
+- **Terminal Efficiency:** Quick commands to add, list, and complete tasks without leaving your workflow.
+- **Secure Integration:** Connects seamlessly to the same FastAPI backend using secure tokens.
+- **Clean Output:** Formatted terminal logs and intuitive command structures.
+- **Tech Stack:** Python, Typer/Click, Rich (for beautiful terminal formatting).
 
-### Backend Setup
-1. Navigate to the backend directory:
-```bash
-cd backend/
-```
+---
 
-2. Create a virtual environment:
-```bash
-python -m venv venv
-```
+## 🛠️ Tech Stack & Features
+- **Backend:** FastAPI (Python), SQLModel (PostgreSQL/SQLite), JWT Authentication.
+- **Security:** Bcrypt password hashing and secure token-based access.
+- **Data Integrity:** Fully validated API schemas and relational database design.
+- **Cross-Platform:** Access your tasks via browser or terminal, perfectly synced.
 
-3. Activate the virtual environment:
-- On Windows:
-```bash
-venv\Scripts\activate
-```
-- On macOS/Linux:
-```bash
-source venv/bin/activate
-```
+---
 
-4. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+## 📦 Setup & Installation
 
-5. Set up environment variables in `.env`:
-```env
-DATABASE_URL=postgresql://username:password@localhost/dbname
-SECRET_KEY=your-super-secret-key-change-in-production
-```
+### Backend & API
+1. `cd backend`
+2. `pip install -r requirements.txt`
+3. Configure `.env` with your `DATABASE_URL`
+4. `uvicorn src.main:app --reload`
 
-6. Start the backend server:
-```bash
-uvicorn src.main:app --reload --port 8000
-```
+### Web Frontend
+1. `cd frontend`
+2. `npm install`
+3. `npm run dev` (Access at `http://localhost:3000`)
 
-### Frontend Setup
-1. Navigate to the frontend directory:
-```bash
-cd frontend/
-```
+### CLI Tool
+1. Navigate to the root directory.
+2. Ensure Python environment is active.
+3. Run `python -m src.cli.todo_app --help` to explore commands.
 
-2. Install dependencies:
-```bash
-npm install
-```
+---
 
-3. Set up environment variables in `.env.local`:
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000
-```
+## 🛡️ Security & Best Practices
+- **JWT Authentication:** Secure user sessions across both interfaces.
+- **Environment Safety:** Strictly enforced `.gitignore` to prevent leaking secrets.
+- **Input Validation:** Pydantic-powered schemas ensure data consistency.
 
-4. Start the frontend development server:
-```bash
-npm run dev
-```
+---
 
-## API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - Register a new user
-- `POST /api/auth/login` - Login a user
-- `POST /api/auth/logout` - Logout a user
-
-### Users
-- `GET /api/users/me` - Get current user info
-
-### Tasks
-- `GET /api/tasks/` - Get all tasks for current user
-- `POST /api/tasks/` - Create a new task
-- `GET /api/tasks/{task_id}` - Get a specific task
-- `PUT /api/tasks/{task_id}` - Update a task
-- `DELETE /api/tasks/{task_id}` - Delete a task
-- `PATCH /api/tasks/{task_id}/complete` - Toggle task completion status
-
-## Running the Application
-
-1. Start the backend server (port 8000)
-2. Start the frontend server (port 3000)
-3. Open your browser and navigate to `http://localhost:3000`
-4. Register a new account or login with an existing account
-5. Start managing your tasks!
-
-## Development
-- Backend: FastAPI with automatic API documentation at `/docs`
-- Frontend: Next.js with hot reloading
-- Database: SQLModel with PostgreSQL
-
-## Security
-- Passwords are hashed using bcrypt
-- JWT tokens for authentication
-- Input validation on both frontend and backend
-- SQL injection protection via SQLModel
-
-## Database Models
-- User: id, email, password_hash, created_at, updated_at
-- Task: id, title, description, completed, user_id, created_at, updated_at
+## 🎨 Design Philosophy
+Zenith-Flow isn't just a todo app; it's a statement. We believe that professional tools should not only work perfectly but also look extraordinary. Every transition, 3D model, and command is crafted to provide a premium user experience.
