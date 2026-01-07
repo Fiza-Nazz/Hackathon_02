@@ -1,55 +1,68 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!-- SYNC IMPACT REPORT
+Version change: 1.0.0 → 1.1.0
+Modified principles: [PRINCIPLE_1_NAME] → "Spec-Driven First", [PRINCIPLE_2_NAME] → "AI-Native Development", [PRINCIPLE_3_NAME] → "Determinism over Creativity", [PRINCIPLE_4_NAME] → "Progressive Evolution", [PRINCIPLE_5_NAME] → "Clean Architecture"
+Added sections: Quality Standards section, Technology Constraints section
+Removed sections: None
+Templates requiring updates: ⚠ pending - .specify/templates/plan-template.md, .specify/templates/spec-template.md, .specify/templates/tasks-template.md
+Follow-up TODOs: None
+-->
+# AI-Native Todo Application (Spec-Driven Evolution Project) Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### Spec-Driven First
+No code may be written without an approved specification. All implementation must trace back to an explicit spec requirement. If behavior is unclear, the specification must be refined — not the code.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### AI-Native Development
+The system is designed assuming AI agents as first-class developers. Claude Code is the primary implementation agent. Humans act as architects, not syntax writers.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### Determinism over Creativity
+Predictable, reproducible behavior is preferred over creative output. AI agents must never invent features, endpoints, or behaviors. Ambiguity must halt execution until clarified in specs.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### Progressive Evolution
+Each phase must cleanly build upon the previous phase. No skipping phases, shortcuts, or premature optimizations. Phase I simplicity must be preserved in later phases conceptually.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### Clean Architecture
+Separation of concerns is mandatory. Business logic must remain independent of UI and infrastructure. Stateless services are preferred unless explicitly specified.
 
-### [PRINCIPLE_6_NAME]
+## Quality Standards
 
+### Traceability
+Every feature must map to:
+  - A specification section
+  - An implementation task
+Every code artifact must reference its originating task.
 
-[PRINCIPLE__DESCRIPTION]
+### Reproducibility
+The project must be reproducible from specs alone.
+A new agent should be able to regenerate the system
+using only the specification files.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+### Consistency
+Naming, structure, and patterns must remain consistent
+across all phases and services.
+No ad-hoc styles or deviations are allowed.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### Simplicity First
+Prefer the simplest solution that satisfies the spec.
+Avoid overengineering unless explicitly required by the phase.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## Technology Constraints
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+- Phase I: Python console application (in-memory only)
+- Phase II: Next.js + FastAPI + SQLModel + Neon PostgreSQL
+- Authentication: Better Auth with JWT
+- Spec Management: Spec-Kit Plus
+- Implementation Agent: Claude Code
+
+Changing the technology stack is NOT allowed
+unless the specification is formally updated and approved.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+The constitution defines the non-negotiable principles, quality standards,
+and constraints governing the development of this project.
+All AI agents and contributors MUST comply with this document
+before proposing specifications, plans, or implementations.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.1.0 | **Ratified**: 2026-01-03 | **Last Amended**: 2026-01-03
