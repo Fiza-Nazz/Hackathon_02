@@ -1,3 +1,13 @@
+---
+title: AI Native Todo Backend
+emoji: 🚀
+colorFrom: blue
+colorTo: pink
+sdk: docker
+pinned: false
+app_port: 7860
+---
+
 # AI-Native Todo Application
 
 A professional-grade, full-stack task management ecosystem that evolves from a developer-focused CLI to a high-performance, immersive web application. Built with a robust **FastAPI** backend and a modern **Next.js** frontend, this project demonstrates spec-driven development and modern architectural patterns.
