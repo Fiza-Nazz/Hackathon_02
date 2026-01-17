@@ -1,5 +1,6 @@
+'use client';
 import React from 'react';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../store/auth';
 
 interface PrivateRouteProps {
@@ -12,7 +13,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
 
   React.useEffect(() => {
     if (!loading && !isAuthenticated) {
-      router.push('/auth/login');
+      router.push('/login');
     }
   }, [isAuthenticated, loading, router]);
 

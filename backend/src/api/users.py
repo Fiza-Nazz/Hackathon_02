@@ -17,6 +17,6 @@ def read_users_me(current_user: User = Depends(get_current_user)):
     return UserRead(
         id=current_user.id,
         email=current_user.email,
-        created_at=current_user.created_at,
-        updated_at=current_user.updated_at
+        createdAt=current_user.createdAt,
+        updatedAt=current_user.updatedAt
     )

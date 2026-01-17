@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { authClient } from '@/lib/auth-client';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -9,8 +10,12 @@ const api = axios.create({
 
 // Request interceptor to add token to requests
 api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('access_token');
+  async (config) => {
+    // Try to get token from Better Auth session first
+    const session = await authClient.getSession();
+    // @ts-ignore - token might be in session depending on plugin config
+    const token = session.data?.session?.token || localStorage.getItem('access_token');
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

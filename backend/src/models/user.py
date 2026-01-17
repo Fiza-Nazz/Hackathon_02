@@ -1,6 +1,10 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import Field, SQLModel, Relationship
+
+if TYPE_CHECKING:
+    from .task import Task
+    from .chatbot import Conversation
 from pydantic import validator
 import re
 
@@ -16,22 +20,22 @@ class UserBase(SQLModel):
 
 
 class User(UserBase, table=True):
-    """
-    User model representing a registered user with email, password hash,
-    account creation date, and authentication tokens.
-    """
-    id: Optional[int] = Field(default=None, primary_key=True)
+    __tablename__ = "auth_user"
+    id: str = Field(primary_key=True)
+    name: Optional[str] = None
     email: str = Field(unique=True, nullable=False, max_length=255)
-    password_hash: str = Field(nullable=False)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    emailVerified: bool = Field(default=False)
+    image: Optional[str] = None
+    createdAt: datetime = Field(default_factory=datetime.utcnow)
+    updatedAt: datetime = Field(default_factory=datetime.utcnow)
 
     # Relationship to tasks
     tasks: List["Task"] = Relationship(back_populates="user")
+    conversations: List["Conversation"] = Relationship(back_populates="user")
 
     def __setattr__(self, name, value):
-        if name == 'updated_at':
-            super().__setattr__('updated_at', datetime.utcnow())
+        if name == 'updatedAt':
+            super().__setattr__('updatedAt', datetime.utcnow())
         super().__setattr__(name, value)
 
 
@@ -47,6 +51,6 @@ class UserRead(UserBase):
     """
     Schema for reading user data (without password).
     """
-    id: int
-    created_at: datetime
-    updated_at: datetime
+    id: str
+    createdAt: datetime
+    updatedAt: datetime

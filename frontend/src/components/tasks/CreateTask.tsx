@@ -1,3 +1,4 @@
+'use client';
 import React, { useState } from 'react';
 import { useTasks } from '@/store/tasks';
 import { motion } from 'framer-motion';

@@ -3,6 +3,17 @@ from typing import Generator
 import os
 from contextlib import contextmanager
 
+from dotenv import load_dotenv
+
+from dotenv import load_dotenv
+from pathlib import Path
+
+# File is at: E:\Hackathon_02\backend\src\database\database.py
+# We want: E:\Hackathon_02\backend\.env
+# Solution: Go up 3 levels to reach 'backend'
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+load_dotenv(BASE_DIR / ".env")
+
 # Get database URL from environment variable, default to SQLite for local development
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./todo_app.db")
 
@@ -11,7 +22,13 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./todo_app.db")
 if DATABASE_URL.startswith("sqlite"):
     engine = create_engine(DATABASE_URL, echo=True, connect_args={"check_same_thread": False})
 else:
-    engine = create_engine(DATABASE_URL, echo=True)
+    # For PostgreSQL, use pooling options to handle connection timeouts from serverless dbs like Neon
+    engine = create_engine(
+        DATABASE_URL, 
+        echo=True,
+        pool_pre_ping=True,
+        pool_recycle=300
+    )
 
 
 def get_session() -> Generator[Session, None, None]:

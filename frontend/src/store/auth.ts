@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { authService } from '../services/auth';
+import { authClient } from '@/lib/auth-client';
 import { User } from '../types';
 
 interface AuthState {
@@ -25,51 +25,78 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (email, password) => {
     set({ loading: true, error: null });
     try {
-      const token = await authService.login({ email, password });
-      const user = await authService.getCurrentUser();
-      set({ user, isAuthenticated: true, loading: false });
+      const { data, error } = await authClient.signIn.email({
+        email,
+        password,
+      });
+
+      if (error) throw new Error(error.message || 'Login failed');
+
+      // Better Auth JWT is usually in the session call or client storage
+      const session = await authClient.getSession();
+      const token = session.data?.session.token;
+      if (token) localStorage.setItem('access_token', token);
+
+      set({
+        user: { id: data?.user.id, email: data?.user.email } as any,
+        isAuthenticated: true,
+        loading: false
+      });
     } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || 'Login failed';
-      set({ loading: false, error: errorMessage });
-      throw new Error(errorMessage);
+      set({ loading: false, error: error.message });
+      throw error;
     }
   },
 
   register: async (email, password) => {
     set({ loading: true, error: null });
     try {
-      await authService.register({ email, password });
-      // Log in immediately after registration to get the token
-      const tokenData = await authService.login({ email, password });
-      const user = await authService.getCurrentUser();
-      set({ user, isAuthenticated: true, loading: false });
+      const { data, error } = await authClient.signUp.email({
+        email,
+        password,
+        name: email.split('@')[0], // Default name
+      });
+
+      if (error) throw new Error(error.message || 'Registration failed');
+
+      const session = await authClient.getSession();
+      const token = session.data?.session.token;
+      if (token) localStorage.setItem('access_token', token);
+
+      set({
+        user: { id: data?.user.id, email: data?.user.email } as any,
+        isAuthenticated: true,
+        loading: false
+      });
     } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || 'Registration failed';
-      set({ loading: false, error: errorMessage });
-      throw new Error(errorMessage);
+      set({ loading: false, error: error.message });
+      throw error;
     }
   },
 
-  logout: () => {
-    authService.logout();
+  logout: async () => {
+    await authClient.signOut();
+    localStorage.removeItem('access_token');
     set({ user: null, isAuthenticated: false, loading: false });
   },
 
   checkAuthStatus: async () => {
-    if (authService.isAuthenticated()) {
-      try {
-        const user = await authService.getCurrentUser();
-        set({ user, isAuthenticated: true });
-      } catch (error) {
-        // If token is invalid, logout user
-        authService.logout();
-        set({ user: null, isAuthenticated: false });
-      }
+    const session = await authClient.getSession();
+    if (session?.data) {
+      const token = session.data.session.token;
+      if (token) localStorage.setItem('access_token', token);
+
+      set({
+        user: { id: session.data.user.id, email: session.data.user.email } as any,
+        isAuthenticated: true
+      });
+    } else {
+      localStorage.removeItem('access_token');
+      set({ user: null, isAuthenticated: false });
     }
   },
 
   setError: (error) => set({ error }),
 }));
 
-// Create a custom hook for easier usage
 export const useAuth = () => useAuthStore();

@@ -25,17 +25,27 @@ def get_current_user(
     Get the current user based on the JWT token.
     """
     token = credentials.credentials
+    
+    # 1. Try JWT verification first (as per spec)
     token_data = AuthUtils.verify_token(token)
+    
+    # 2. If JWT fails, it might be an opaque Better Auth session token
+    if token_data is None:
+        print(f"DEBUG: JWT verification failed, trying Session verification for: {token[:15]}...")
+        token_data = AuthUtils.verify_session(token, session)
+        
     if token_data is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
+            detail="Could not validate credentials - Neural Link Failed",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    statement = select(User).where(User.email == token_data.email)
+    # Try lookup by ID (token_data.id contains 'sub' value which is the User ID in Better Auth)
+    statement = select(User).where(User.id == token_data.id)
     user = session.exec(statement).first()
     if user is None:
+        print(f"DEBUG: User not found in DB for ID: {token_data.id}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",

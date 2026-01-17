@@ -10,6 +10,7 @@ import Layout from '@/components/layout/Layout';
 import { LayoutDashboard, Plus, Settings, User as UserIcon } from 'lucide-react';
 
 const DashboardBackground = dynamic(() => import('@/components/layout/DashboardBackground'), { ssr: false });
+const ChatWidget = dynamic(() => import('@/components/chat/ChatWidget'), { ssr: false });
 
 const DashboardPage: React.FC = () => {
   const router = useRouter();
@@ -48,6 +49,9 @@ const DashboardPage: React.FC = () => {
 
       {/* 3D Neural Grid Background */}
       <DashboardBackground />
+
+      {/* AI Chat Widget */}
+      <ChatWidget />
 
       <div className="max-w-7xl mx-auto px-6 md:px-12 py-12 relative">
         {/* Header Section */}

@@ -1,15 +1,40 @@
+'use client';
 import React, { useEffect } from 'react';
 import { useTasks } from '@/store/tasks';
+import { useAuth } from '@/store/auth';
 import { motion, AnimatePresence } from 'framer-motion';
 import TaskItem from './TaskItem';
 import { Loader2, Inbox } from 'lucide-react';
 
 const TaskList: React.FC = () => {
+  const { isAuthenticated } = useAuth();
   const { tasks, loading, error, fetchTasks } = useTasks();
 
   useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+    if (isAuthenticated) {
+      fetchTasks();
+
+      // Auto-refresh every 3 seconds when page is visible
+      const refreshInterval = setInterval(() => {
+        if (!document.hidden) {
+          fetchTasks();
+        }
+      }, 3000);
+
+      // Refresh when user comes back to this tab
+      const handleVisibilityChange = () => {
+        if (!document.hidden) {
+          fetchTasks();
+        }
+      };
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+
+      return () => {
+        clearInterval(refreshInterval);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
+    }
+  }, [fetchTasks, isAuthenticated]);
 
   if (loading && tasks.length === 0) {
     return (
@@ -35,6 +60,7 @@ const TaskList: React.FC = () => {
           <Inbox className="text-gray-600" size={24} />
         </div>
         <p className="text-gray-500 text-sm font-medium">Neural Log Empty. Initialize a new task entry.</p>
+        <p className="text-[10px] text-gray-700 mt-2 font-mono">DEBUG: {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}</p>
       </div>
     );
   }
@@ -56,6 +82,9 @@ const TaskList: React.FC = () => {
           ))}
         </AnimatePresence>
       </div>
+      <p className="text-[10px] text-gray-700 mt-8 font-mono text-center opacity-50">
+        Connected to: {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'} | Tasks: {tasks.length}
+      </p>
     </div>
   );
 };

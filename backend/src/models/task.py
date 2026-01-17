@@ -36,7 +36,7 @@ class Task(TaskBase, table=True):
     description (optional), completion status (boolean), and user ID (foreign key).
     """
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id", nullable=False)
+    user_id: str = Field(foreign_key="auth_user.id", nullable=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -48,7 +48,7 @@ class TaskCreate(TaskBase):
     """
     Schema for creating a new task.
     """
-    title: str
+    pass
 
 
 class TaskRead(TaskBase):
@@ -56,7 +56,7 @@ class TaskRead(TaskBase):
     Schema for reading task data.
     """
     id: int
-    user_id: int
+    user_id: str
     created_at: datetime
     updated_at: datetime
 

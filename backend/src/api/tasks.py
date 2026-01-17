@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlmodel import Session, select
 from typing import List
 from ..models import Task, TaskCreate, TaskRead, TaskUpdate, User
@@ -10,19 +10,23 @@ from datetime import datetime
 router = APIRouter()
 
 
-@router.get("/", response_model=List[TaskRead])
-def read_tasks(
+@router.get("/")
+async def read_tasks(
+    current_user: User = Depends(get_current_user),
     skip: int = 0,
     limit: int = 100,
-    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     """
-    Retrieve tasks for the current user.
+    Retrieve tasks for the current authenticated user.
     """
-    statement = select(Task).where(Task.user_id == current_user.id).offset(skip).limit(limit)
-    tasks = session.exec(statement).all()
-    return tasks
+    try:
+        statement = select(Task).where(Task.user_id == current_user.id).order_by(Task.created_at.desc()).offset(skip).limit(limit)
+        tasks = session.exec(statement).all()
+        return tasks
+    except Exception as e:
+        print(f"ERROR in read_tasks: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch tasks")
 
 
 @router.post("/", response_model=TaskRead)
@@ -32,21 +36,48 @@ def create_task(
     session: Session = Depends(get_session)
 ):
     """
-    Create a new task for the current user.
+    Create a new task for the current authenticated user.
     """
-    # Create task with current user's ID
-    db_task = Task(
-        title=task.title,
-        description=task.description,
-        completed=task.completed,
-        priority=task.priority,
-        category=task.category,
-        user_id=current_user.id
-    )
-    session.add(db_task)
-    session.commit()
-    session.refresh(db_task)
-    return db_task
+    try:
+        db_task = Task(
+            title=task.title,
+            description=task.description,
+            completed=task.completed,
+            priority=task.priority,
+            category=task.category,
+            user_id=current_user.id
+        )
+        session.add(db_task)
+        session.commit()
+        session.refresh(db_task)
+        return db_task
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/delete-all")
+async def delete_all_tasks(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """
+    Delete ALL tasks for the current authenticated user.
+    """
+    try:
+        statement = select(Task).where(Task.user_id == current_user.id)
+        tasks = session.exec(statement).all()
+        
+        count = len(tasks)
+        for task in tasks:
+            session.delete(task)
+        
+        session.commit()
+        return {"message": f"Deleted {count} task(s)", "deleted_count": count}
+            
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/{task_id}", response_model=TaskRead)

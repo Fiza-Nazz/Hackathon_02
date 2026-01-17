@@ -1,3 +1,4 @@
+'use client';
 import React, { useRef, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { MeshDistortMaterial, Float, Octahedron, Torus, PerspectiveCamera, Stars } from '@react-three/drei';

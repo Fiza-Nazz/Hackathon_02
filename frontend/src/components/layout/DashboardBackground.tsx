@@ -1,3 +1,4 @@
+'use client';
 import React from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Grid, PerspectiveCamera } from '@react-three/drei';

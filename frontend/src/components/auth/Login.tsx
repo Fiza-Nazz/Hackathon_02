@@ -1,5 +1,6 @@
+'use client';
 import React, { useState } from 'react';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/store/auth';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Loader2 } from 'lucide-react';

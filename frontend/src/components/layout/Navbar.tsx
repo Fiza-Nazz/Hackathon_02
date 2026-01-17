@@ -1,6 +1,7 @@
+'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
+import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sun, Moon, Menu, X, LogIn, UserPlus, LayoutDashboard, LogOut, Globe } from 'lucide-react';
 import { useAuth } from '@/store/auth';
@@ -12,6 +13,7 @@ const Navbar: React.FC = () => {
     const [isDarkMode, setIsDarkMode] = useState(true);
     const { isAuthenticated, logout } = useAuth();
     const router = useRouter();
+    const pathname = usePathname();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -59,7 +61,7 @@ const Navbar: React.FC = () => {
                             href={link.href}
                             className={cn(
                                 "text-sm font-medium transition-colors hover:text-electric-blue flex items-center space-x-2",
-                                router.pathname === link.href ? "text-electric-blue" : "text-gray-400"
+                                pathname === link.href ? "text-electric-blue" : "text-gray-400"
                             )}
                         >
                             <link.icon size={18} />
