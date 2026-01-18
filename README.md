@@ -16,14 +16,20 @@ A professional-grade, full-stack task management ecosystem that evolves from a d
 
 ## 🚀 Key Interfaces
 
-### 1. Full-Stack Web Application (Phase II)
-A visually stunning and responsive web interface designed for a premium user experience.
-- **Frontend Stack:** Next.js 14, TypeScript, Tailwind CSS, Zustand for state management.
-- **Advanced UI/UX:** Features complex 3D models, smooth transitions, and a clean, modern aesthetic.
-- **Secure Authentication:** JWT-based user registration and login to ensure personal data isolation.
-- **Persistence:** Integrates with PostgreSQL/SQLite via SQLModel for reliable data storage.
+### 1. AI-Powered Chatbot (Phase III)
+A conversational interface for managing tasks via natural language, meeting critical hackathon compliance.
+- **Frontend UI:** Integrated with **OpenAI ChatKit** for a production-grade AI chat experience.
+- **Backend Stack:** FastAPI with **OpenAI Agents SDK** and **Official MCP SDK**.
+- **MCP Tools:** Exposes stateless tools for task CRUD operations (Add, List, Complete, Delete, Update).
+- **Persistence:** Full conversation history and multi-device persistence via database storage.
 
-### 2. Efficiency-First CLI Tool (Phase I)
+### 2. Full-Stack Web Application (Phase II)
+A visually stunning and responsive web interface designed for a premium user experience.
+- **Frontend Stack:** Next.js 14/15, TypeScript, Tailwind CSS, Zustand for state management.
+- **Advanced UI/UX:** Features complex 3D models and smooth transitions.
+- **Secure Authentication:** Better Auth with JWT for user isolation.
+
+### 3. Efficiency-First CLI Tool (Phase I)
 A powerful command-line interface for managing tasks directly from your terminal.
 - **CLI Stack:** Python, `todo_app.py` logic.
 - **Speed:** Quick commands to create, list, update, and delete tasks.

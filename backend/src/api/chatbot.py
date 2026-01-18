@@ -3,6 +3,7 @@ import json
 import logging
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import Session, select, delete
 from groq import AsyncGroq
@@ -196,13 +197,10 @@ You are **ELITE NEURAL COMMANDER v3.9**, a sophisticated AI Task Agent built and
         
         return "Sorry, I am having trouble connecting to my neural network."
 
-# --- ENDPOINTS ---
 class ChatMessageRequest(BaseModel):
     message: str
     user_id: Optional[str] = None
     language: str = "en"
-
-from pydantic import BaseModel
 
 @router.post("/message")
 async def handle_message(request: Request, body: ChatMessageRequest, session: Session = Depends(get_session)):
