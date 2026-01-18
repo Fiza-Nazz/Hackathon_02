@@ -29,7 +29,7 @@ description: "Task list for AI-Native Todo Application implementation"
 **Purpose**: Project initialization and basic structure
 
 - [x] T001 Create project structure per implementation plan in root directory
-- [x] T002 Initialize Python 3.11 project with basic dependencies
+- [x] T002 Initialize Python 3.13+ project using uv (pyproject.toml + uv.lock)
 - [x] T003 [P] Create src directory structure (src/models/, src/services/, src/cli/, src/lib/)
 
 ---

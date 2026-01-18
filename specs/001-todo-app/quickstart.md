@@ -3,24 +3,19 @@
 ## Phase I: Python Console Application
 
 ### Prerequisites
-- Python 3.11 or higher
-- pip package manager
+- Python **3.13+**
+- **uv** package manager
 
 ### Setup
-1. Clone or create the project directory
+1. Clone the repository
 2. Navigate to the project root
-3. Create a virtual environment (optional but recommended):
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+3. Ensure uv is installed: `uv --version`
 
 ### Running the Application
-1. Navigate to the project root directory
-2. Run the console application:
-   ```bash
-   python src/cli/todo_app.py
-   ```
+Run the console app with Python 3.13+ via uv:
+```bash
+uv run --python 3.13.3 todo-app
+```
 
 ### Basic Usage
 1. The application starts and displays a menu of available operations
