@@ -33,10 +33,29 @@ class User(UserBase, table=True):
     tasks: List["Task"] = Relationship(back_populates="user")
     conversations: List["Conversation"] = Relationship(back_populates="user")
 
-    def __setattr__(self, name, value):
-        if name == 'updatedAt':
-            super().__setattr__('updatedAt', datetime.utcnow())
-        super().__setattr__(name, value)
+
+class Account(SQLModel, table=True):
+    __tablename__ = "auth_account"
+    id: str = Field(primary_key=True)
+    userId: str = Field(foreign_key="auth_user.id", nullable=False)
+    accountId: str = Field(nullable=False)
+    providerId: str = Field(nullable=False)
+    accessToken: Optional[str] = None
+    refreshToken: Optional[str] = None
+    expiresAt: Optional[datetime] = None
+    password: Optional[str] = None
+    createdAt: datetime = Field(default_factory=datetime.utcnow)
+    updatedAt: datetime = Field(default_factory=datetime.utcnow)
+
+
+class Verification(SQLModel, table=True):
+    __tablename__ = "auth_verification"
+    id: str = Field(primary_key=True)
+    identifier: str = Field(nullable=False)
+    value: str = Field(nullable=False)
+    expiresAt: datetime = Field(nullable=False)
+    createdAt: datetime = Field(default_factory=datetime.utcnow)
+    updatedAt: datetime = Field(default_factory=datetime.utcnow)
 
 
 class UserCreate(UserBase):
