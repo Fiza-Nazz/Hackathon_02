@@ -1,15 +1,9 @@
 import { createAuthClient } from "better-auth/react";
 import { jwtClient } from "better-auth/client/plugins";
 
-// Professional Base URL Detection
-const getBaseURL = () => {
-    if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
-    if (typeof window !== 'undefined') return window.location.origin;
-    return "http://localhost:3000";
-};
-
 export const authClient = createAuthClient({
-    baseURL: getBaseURL(),
+    // baseURL is deliberately omitted to ensure it uses the current origin (Vercel)
+    // rather than accidentally hitting the Python backend.
     plugins: [
         jwtClient()
     ]

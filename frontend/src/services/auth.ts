@@ -38,19 +38,14 @@ api.interceptors.response.use(
 export const authService = {
   // Register a new user
   async register(userData: RegisterData): Promise<User> {
-    const response = await api.post('/auth/register', userData);
-    return response.data;
+    console.error("CRITICAL: Deprecated authService.register called. Use better-auth instead.");
+    throw new Error("Use Better Auth frontend for registration");
   },
 
   // Login user and get token
   async login(credentials: LoginCredentials): Promise<Token> {
-    const response = await api.post('/auth/login', credentials);
-    const { access_token } = response.data;
-
-    // Store token in localStorage
-    localStorage.setItem('access_token', access_token);
-
-    return response.data;
+    console.error("CRITICAL: Deprecated authService.login called. Use better-auth instead.");
+    throw new Error("Use Better Auth frontend for login");
   },
 
   // Logout user

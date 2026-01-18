@@ -9,9 +9,19 @@ const pool = new Pool({
 
 // Professional Base URL Detection for Server
 const getBaseURL = () => {
-    if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
-    if (process.env.BETTER_AUTH_URL) return process.env.BETTER_AUTH_URL;
-    if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+    // Priority 1: Use APP_URL if it's set and NOT pointing to Hugging Face
+    if (process.env.NEXT_PUBLIC_APP_URL && !process.env.NEXT_PUBLIC_APP_URL.includes('hf.space')) {
+        return process.env.NEXT_PUBLIC_APP_URL;
+    }
+    // Priority 2: Use BETTER_AUTH_URL if it's set and NOT pointing to Hugging Face
+    if (process.env.BETTER_AUTH_URL && !process.env.BETTER_AUTH_URL.includes('hf.space')) {
+        return process.env.BETTER_AUTH_URL;
+    }
+    // Priority 3: Use VERCEL_URL (auto-set by Vercel)
+    if (process.env.VERCEL_URL) {
+        return `https://${process.env.VERCEL_URL}`;
+    }
+    // Fallback: Localhost
     return "http://localhost:3000";
 };
 
