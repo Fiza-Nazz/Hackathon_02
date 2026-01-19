@@ -9,13 +9,13 @@ const pool = new Pool({
 
 // Professional Base URL Detection for Server
 const getBaseURL = () => {
-    // Priority 1: Use BETTER_AUTH_URL if set (and NOT pointing to Hugging Face)
-    if (process.env.BETTER_AUTH_URL && !process.env.BETTER_AUTH_URL.includes('hf.space')) {
-        return process.env.BETTER_AUTH_URL;
-    }
-    // Priority 2: Use NEXT_PUBLIC_APP_URL if set (and NOT pointing to Hugging Face)
+    // Priority 1: Use APP_URL if it's set and NOT pointing to Hugging Face
     if (process.env.NEXT_PUBLIC_APP_URL && !process.env.NEXT_PUBLIC_APP_URL.includes('hf.space')) {
         return process.env.NEXT_PUBLIC_APP_URL;
+    }
+    // Priority 2: Use BETTER_AUTH_URL if it's set and NOT pointing to Hugging Face
+    if (process.env.BETTER_AUTH_URL && !process.env.BETTER_AUTH_URL.includes('hf.space')) {
+        return process.env.BETTER_AUTH_URL;
     }
     // Priority 3: Use VERCEL_URL (auto-set by Vercel)
     if (process.env.VERCEL_URL) {

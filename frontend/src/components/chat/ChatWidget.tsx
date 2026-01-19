@@ -39,8 +39,7 @@ const ChatWidget: React.FC = () => {
     const loadHistory = async () => {
         try {
             const userId = String(user?.id || '1');
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-            const response = await fetch(`${baseUrl}/api/chat/history/${userId}`);
+            const response = await fetch(`http://127.0.0.1:8001/api/chat/history/${userId}`);
             if (response.ok) {
                 const history = await response.json();
                 setMessages(history);

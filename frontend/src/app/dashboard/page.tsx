@@ -161,8 +161,7 @@ export default function DashboardPage() {
                                                     // Get token from Better Auth or localStorage
                                                     const token = localStorage.getItem('access_token');
 
-                                                    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-                                                    const response = await fetch(`${baseUrl}/api/tasks/delete-all`, {
+                                                    const response = await fetch('http://localhost:8000/api/tasks/delete-all', {
                                                         method: 'DELETE',
                                                         headers: {
                                                             'Authorization': `Bearer ${token}`,
