@@ -12,7 +12,8 @@ if not loaded:
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .api.auth import router as auth_router
+# from .api.auth import router as auth_router
+# app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
 from .api.users import router as users_router
 from .api.tasks import router as tasks_router
 from .api.chatbot import router as chatbot_router
@@ -39,7 +40,7 @@ app.add_middleware(
 )
 
 # Include API routers
-app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
+# app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
 app.include_router(users_router, prefix="/api/users", tags=["users"])
 app.include_router(tasks_router, prefix="/api/tasks", tags=["tasks"])
 app.include_router(chatbot_router, prefix="/api/chat", tags=["chatbot"])
