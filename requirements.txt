@@ -1,2 +1,0 @@
-# No specific dependencies needed for basic Python console app
-# Using built-in Python libraries only
