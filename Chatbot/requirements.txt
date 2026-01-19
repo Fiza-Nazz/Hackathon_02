@@ -1,0 +1,10 @@
+# Requirements for Chatbot Phase 3
+sqlmodel>=0.0.14
+pydantic>=2.0.0
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.0.0
+asyncpg>=0.29.0
+fastapi>=0.104.0
+mcp>=1.0.0
+openai>=1.0.0
