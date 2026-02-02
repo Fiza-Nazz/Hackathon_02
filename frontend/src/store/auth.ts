@@ -25,36 +25,35 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (email, password) => {
     set({ loading: true, error: null });
     try {
-      const response = await authClient.signIn.email({
-        email,
-        password,
+      // RADICAL FIX: Call our direct auth endpoint instead of Better Auth
+      const response = await fetch('/api/auth-direct/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
       });
 
-      if (response.error) {
-        throw new Error(response.error.message || 'Login failed');
+      if (!response.ok) {
+        throw new Error('Login failed');
       }
 
-      // CRITICAL FIX: Extract token IMMEDIATELY from the response
-      // Better Auth returns token directly in data, not under session
-      const token = response.data?.token;
-      const userId = response.data?.user?.id;
-      const userEmail = response.data?.user?.email;
+      const data = await response.json();
+      const token = data.token;
+      const user = data.user;
 
-      console.log('[Auth Store] Login successful, token:', token ? 'Present' : 'Missing');
+      console.log('[Auth Store - DIRECT] Login successful, token:', token ? 'Present' : 'Missing');
 
       if (token) {
-        // Save token immediately to localStorage
         localStorage.setItem('access_token', token);
-        console.log('[Auth Store] Token saved to localStorage');
+        console.log('[Auth Store - DIRECT] Token saved to localStorage');
       }
 
       set({
-        user: { id: userId, email: userEmail } as any,
+        user: { id: user.id, email: user.email } as any,
         isAuthenticated: true,
         loading: false
       });
     } catch (error: any) {
-      console.error('[Auth Store] Login error:', error);
+      console.error('[Auth Store - DIRECT] Login error:', error);
       set({ loading: false, error: error.message });
       throw error;
     }
@@ -63,35 +62,35 @@ export const useAuthStore = create<AuthState>((set) => ({
   register: async (email, password) => {
     set({ loading: true, error: null });
     try {
-      const response = await authClient.signUp.email({
-        email,
-        password,
-        name: email.split('@')[0],
+      // RADICAL FIX: Call our direct auth endpoint
+      const response = await fetch('/api/auth-direct/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
       });
 
-      if (response.error) {
-        throw new Error(response.error.message || 'Registration failed');
+      if (!response.ok) {
+        throw new Error('Registration failed');
       }
 
-      // CRITICAL FIX: Extract token immediately
-      const token = response.data?.token;
-      const userId = response.data?.user?.id;
-      const userEmail = response.data?.user?.email;
+      const data = await response.json();
+      const token = data.token;
+      const user = data.user;
 
-      console.log('[Auth Store] Registration successful, token:', token ? 'Present' : 'Missing');
+      console.log('[Auth Store - DIRECT] Registration successful, token:', token ? 'Present' : 'Missing');
 
       if (token) {
         localStorage.setItem('access_token', token);
-        console.log('[Auth Store] Token saved to localStorage');
+        console.log('[Auth Store - DIRECT] Token saved to localStorage');
       }
 
       set({
-        user: { id: userId, email: userEmail } as any,
+        user: { id: user.id, email: user.email } as any,
         isAuthenticated: true,
         loading: false
       });
     } catch (error: any) {
-      console.error('[Auth Store] Registration error:', error);
+      console.error('[Auth Store - DIRECT] Registration error:', error);
       set({ loading: false, error: error.message });
       throw error;
     }
@@ -106,41 +105,15 @@ export const useAuthStore = create<AuthState>((set) => ({
   checkAuthStatus: async () => {
     set({ loading: true });
 
-    // CRITICAL FIX: Check localStorage first before hitting the potentially failing API
+    // RADICAL FIX: Only check localStorage, don't call any server-side session API
     const storedToken = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
 
-    try {
-      const session = await authClient.getSession();
-
-      if (session?.data?.user) {
-        // Session is valid - keep the user authenticated
-        // Note: getSession doesn't return the token, but we have it in localStorage
-        set({
-          user: { id: session.data.user.id, email: session.data.user.email } as any,
-          isAuthenticated: true,
-          loading: false
-        });
-      } else {
-        // No session data from server - but check if we have a stored token
-        if (storedToken && storedToken.length > 20) {
-          // Trust localStorage token
-          console.log("[Auth Store] No server session but have stored token, staying authenticated");
-          set({ isAuthenticated: true, loading: false });
-        } else {
-          set({ user: null, isAuthenticated: false, loading: false });
-        }
-      }
-    } catch (error) {
-      console.error("Auth status check failed, entering recovery mode:", error);
-
-      // CRITICAL: Recovery mode - trust localStorage if it has a valid token
-      if (storedToken && storedToken.length > 20) {
-        console.log("[Auth Store] Recovery: Using localStorage token, staying authenticated");
-        set({ isAuthenticated: true, loading: false });
-      } else {
-        console.log("[Auth Store] Recovery: No valid token found, logging out");
-        set({ user: null, isAuthenticated: false, loading: false });
-      }
+    if (storedToken && storedToken.length > 20) {
+      console.log("[Auth Store - DIRECT] Valid token found in localStorage, user is authenticated");
+      set({ isAuthenticated: true, loading: false });
+    } else {
+      console.log("[Auth Store - DIRECT] No valid token, user must login");
+      set({ user: null, isAuthenticated: false, loading: false });
     }
   },
 
