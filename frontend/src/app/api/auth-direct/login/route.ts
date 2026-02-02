@@ -16,9 +16,10 @@ export async function POST(request: NextRequest) {
         });
 
         if (!backendResponse.ok) {
+            const errorData = await backendResponse.json().catch(() => ({}));
             return NextResponse.json(
-                { error: 'Invalid credentials' },
-                { status: 401 }
+                { error: errorData.detail || 'Invalid credentials' },
+                { status: backendResponse.status }
             );
         }
 

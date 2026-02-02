@@ -33,7 +33,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       });
 
       if (!response.ok) {
-        throw new Error('Login failed');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Login failed');
       }
 
       const data = await response.json();
@@ -70,7 +71,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       });
 
       if (!response.ok) {
-        throw new Error('Registration failed');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Registration failed');
       }
 
       const data = await response.json();

@@ -16,9 +16,10 @@ export async function POST(request: NextRequest) {
         });
 
         if (!backendResponse.ok) {
+            const errorData = await backendResponse.json().catch(() => ({}));
             return NextResponse.json(
-                { error: 'Registration failed' },
-                { status: 400 }
+                { error: errorData.detail || 'Registration failed' },
+                { status: backendResponse.status }
             );
         }
 
