@@ -36,7 +36,7 @@ export const auth = betterAuth({
         jwt({
             // JWT settings
             jwt: {
-                expiresIn: "7d"
+                expirationTime: "7d"
             }
         })
     ],
