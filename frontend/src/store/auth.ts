@@ -111,8 +111,33 @@ export const useAuthStore = create<AuthState>((set) => ({
     const storedToken = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
 
     if (storedToken && storedToken.length > 20) {
-      console.log("[Auth Store - DIRECT] Valid token found in localStorage, user is authenticated");
-      set({ isAuthenticated: true, loading: false });
+      console.log("[Auth Store - DIRECT] Valid token found in localStorage");
+
+      try {
+        // Decode JWT payload (Part 2) to get User ID
+        const base64Url = storedToken.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+
+        const payload = JSON.parse(jsonPayload);
+        const userId = payload.sub; // 'sub' contains the user ID in our backend
+
+        set({
+          isAuthenticated: true,
+          loading: false,
+          user: { id: userId, email: payload.email || 'user@system' } as any
+        });
+        console.log("[Auth Store - DIRECT] User restored from token:", userId);
+
+      } catch (e) {
+        console.error("Failed to decode token:", e);
+        // If decode fails, logout to be safe
+        localStorage.removeItem('access_token');
+        set({ user: null, isAuthenticated: false, loading: false });
+      }
+
     } else {
       console.log("[Auth Store - DIRECT] No valid token, user must login");
       set({ user: null, isAuthenticated: false, loading: false });
