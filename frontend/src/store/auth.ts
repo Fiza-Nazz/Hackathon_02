@@ -32,12 +32,12 @@ export const useAuthStore = create<AuthState>((set) => ({
         body: JSON.stringify({ email, password }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Login failed');
+        throw new Error(data.error || 'Login failed');
       }
 
-      const data = await response.json();
       const token = data.token;
       const user = data.user;
 
@@ -70,12 +70,12 @@ export const useAuthStore = create<AuthState>((set) => ({
         body: JSON.stringify({ email, password }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Registration failed');
+        throw new Error(data.error || 'Registration failed');
       }
 
-      const data = await response.json();
       const token = data.token;
       const user = data.user;
 
