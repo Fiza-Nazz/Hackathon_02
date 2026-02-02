@@ -96,10 +96,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  logout: async () => {
-    await authClient.signOut();
+  logout: () => {
     localStorage.removeItem('access_token');
     set({ user: null, isAuthenticated: false, loading: false });
+    window.location.href = '/login';
   },
 
   checkAuthStatus: async () => {

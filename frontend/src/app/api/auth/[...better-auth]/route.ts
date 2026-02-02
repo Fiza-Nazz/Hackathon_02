@@ -1,4 +1,11 @@
-import { auth } from "@/lib/auth";
-import { toNextJsHandler } from "better-auth/next-js";
+import { NextResponse } from 'next/server';
 
-export const { POST, GET } = toNextJsHandler(auth);
+// Deactivating Better Auth session endpoints to prevent 500 errors
+// Everything is now handled by auth-direct routes
+export async function GET() {
+    return NextResponse.json({ message: "Better Auth observer deactivated." }, { status: 200 });
+}
+
+export async function POST() {
+    return NextResponse.json({ message: "Better Auth observer deactivated." }, { status: 200 });
+}

@@ -15,23 +15,18 @@ api.interceptors.request.use(
   async (config) => {
     let token: string | undefined;
 
-    // 1. Aggressive Persistent Storage Check (Most Reliable on Vercel)
+    // ONLY check localStorage - never hit Better Auth session API
     if (typeof window !== 'undefined') {
-      token = localStorage.getItem('access_token') || undefined;
-    }
-
-    // 2. Fallback to Session Cache if storage is empty
-    if (!token) {
-      try {
-        const session = await authClient.getSession();
-        token = session.data?.session?.token;
-      } catch (err) {
-        console.warn("[API Engine] Secondary session link failed, using guest context.");
+      const stored = localStorage.getItem('access_token');
+      if (stored && stored.length > 10) {
+        token = stored;
       }
     }
 
     if (token) {
       config.headers.Authorization = `Bearer ${token.trim()}`;
+    } else {
+      console.warn("[API Engine] No token found in localStorage, request may fail.");
     }
 
     return config;
