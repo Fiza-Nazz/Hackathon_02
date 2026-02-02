@@ -32,6 +32,7 @@ app.add_middleware(
     allow_origins=[
         "https://frontend-eight-gilt-98.vercel.app",
         "https://frontend-fiza-qureshis-projects.vercel.app",
+        "https://todo-ai-professional-fiza.vercel.app",
         "http://localhost:3000",
     ],
     allow_credentials=True,
