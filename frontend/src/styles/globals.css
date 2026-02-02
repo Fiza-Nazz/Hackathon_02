@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+@theme {
+  --color-electric-blue: #00E5FF;
+  --color-electric-blue-dark: #00B8D4;
+  --color-dark-bg: #000000;
+  --color-glass: rgba(255, 255, 255, 0.05);
+
+  --font-heading: "Outfit", sans-serif;
+  --font-body: "Inter", sans-serif;
+
+  --shadow-glow: 0 0 15px rgba(0, 229, 255, 0.4);
+  --shadow-glow-lg: 0 0 30px rgba(0, 229, 255, 0.6);
+}
+
+:root {
+  --background: #000000;
+  --foreground: #ffffff;
+  --primary: #00E5FF;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+}
+
+.glass-morphism {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.electric-glow {
+  text-shadow: 0 0 10px rgba(0, 229, 255, 0.8);
+}
+
+.electric-border {
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.electric-border:hover {
+  border-color: rgba(0, 229, 255, 0.8);
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+}
+
+/* Light Mode Overrides */
+:root.light-theme {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --color-glass: rgba(0, 0, 0, 0.03);
+}
+
+.light-theme body {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+.light-theme .glass-morphism {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.light-theme .text-gray-400,
+.light-theme .text-gray-500 {
+  color: #64748b;
+}
+
+.light-theme .text-white {
+  color: #0f172a;
+}
+
+.light-theme .bg-black {
+  background-color: #f8fafc;
+}
+
+.light-theme .border-white\/5,
+.light-theme .border-white\/10,
+.light-theme .border-white\/20 {
+  border-color: rgba(0, 0, 0, 0.05);
+}
+
+.light-theme .bg-white\/5 {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.light-theme .electric-border:hover {
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #000000;
+}
+
+:root.light-theme ::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+
+:root.light-theme ::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00E5FF;
+}
