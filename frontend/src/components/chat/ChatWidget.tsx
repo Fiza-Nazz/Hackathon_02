@@ -50,21 +50,8 @@ const ChatWidget: React.FC = () => {
         }
     };
 
-    const handleToggleChat = async () => {
-        if (isOpen) {
-            // Logic for closing: Auto-clear logs for fresh session (User Requirement)
-            try {
-                const userId = String(user?.id || '1');
-                const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-                await fetch(`${baseUrl}/api/chat/history/${userId}`, { method: 'DELETE' });
-                setMessages([]);
-            } catch (e) {
-                console.error("Auto-clear failed");
-            }
-            setIsOpen(false);
-        } else {
-            setIsOpen(true);
-        }
+    const handleToggleChat = () => {
+        setIsOpen(!isOpen);
     };
 
     const handleSendMessage = async () => {
