@@ -1,0 +1,16 @@
+# Dapr Jobs API Configuration
+# Note: Dapr Jobs API is accessed via HTTP endpoints at /v1.0-alpha1/jobs/
+# This represents the exact-time job scheduling functionality for reminders
+# Jobs are scheduled programmatically via the Dapr client in the backend
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: jobs-api
+  namespace: default
+spec:
+  type: secretstores.kubernetes
+  version: v1
+  metadata: []
+scopes:
+- backend-service
+- notification-service

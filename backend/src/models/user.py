@@ -42,7 +42,6 @@ class Account(SQLModel, table=True):
     providerId: str = Field(nullable=False)
     accessToken: Optional[str] = None
     refreshToken: Optional[str] = None
-    expiresAt: Optional[datetime] = None
     password: Optional[str] = None
     createdAt: datetime = Field(default_factory=datetime.utcnow)
     updatedAt: datetime = Field(default_factory=datetime.utcnow)

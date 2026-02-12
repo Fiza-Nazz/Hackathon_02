@@ -14,9 +14,38 @@ import os
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+def verify_scrypt_password(password: str, stored_hash: str) -> bool:
+    """
+    Verify a password against a Scrypt hash in 'salt:hash' format (used by Better Auth).
+    """
+    import hashlib
+    import binascii
+    
+    try:
+        if ":" not in stored_hash:
+            return False
+            
+        salt_hex, hash_hex = stored_hash.split(":")
+        salt = binascii.unhexlify(salt_hex)
+        
+        # Better Auth defaults: N=16384, r=8, p=1, key_len=64
+        derived_hash = hashlib.scrypt(
+            password.encode(),
+            salt=salt,
+            n=16384,
+            r=8,
+            p=1,
+            dklen=64
+        )
+        return binascii.hexlify(derived_hash).decode() == hash_hex
+    except Exception as e:
+        print(f"DEBUG: Scrypt verification error: {str(e)}")
+        return False
+
 # JWT settings
-# Use BETTER_AUTH_SECRET to match frontend Better Auth configuration
-SECRET_KEY = os.getenv("BETTER_AUTH_SECRET") or os.getenv("SECRET_KEY", "development-secret-key-1234567890")
+def get_secret_key():
+    return os.getenv("BETTER_AUTH_SECRET") or "my_ultra_secure_secret_123"
+
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -42,22 +71,35 @@ class AuthUtils:
     """
 
     @staticmethod
+    def verify_password(plain_password: str, hashed_password: str) -> bool:
+        """
+        Verify a password using either Bcrypt (Passlib) or Scrypt (Better Auth).
+        """
+        # 1. Try Scrypt (Better Auth format: 'salt:hash')
+        if ":" in hashed_password and len(hashed_password) > 100:
+            return verify_scrypt_password(plain_password, hashed_password)
+            
+        # 2. Fallback to Bcrypt (New system format)
+        try:
+            return pwd_context.verify(plain_password, hashed_password)
+        except Exception:
+            return False
+
+    @staticmethod
     def verify_token(token: str) -> Optional[TokenData]:
         """
         Verify a JWT token and return the token data.
         Compatible with Better Auth JWT structure.
         """
-        # Ensure we're using the latest secret from environment
-        current_secret = os.getenv("BETTER_AUTH_SECRET") or os.getenv("SECRET_KEY", "development-secret-key-1234567890")
+        current_secret = get_secret_key()
         
         try:
             # Check if token looks like a JWT (3 parts separated by dots)
             if token.count('.') != 2:
-                print(f"DEBUG: Token does not follow JWT format (parts: {token.count('.') + 1})")
+                print(f"DEBUG: Token parts count mismatch: {token.count('.') + 1}. Token: {token[:10]}...")
                 return None
 
-            # Better Auth by default uses HS256 if a secret is provided
-            # We disable audience verification as Better Auth might set it to something we don't expect
+            print(f"DEBUG: Attempting decode with secret: {current_secret[:5]}... alg: {ALGORITHM}")
             payload = jwt.decode(
                 token, 
                 current_secret, 
@@ -66,51 +108,51 @@ class AuthUtils:
             )
             print(f"DEBUG: Token decoded successfully. Payload: {payload}")
             
-            # Better Auth puts user ID in 'sub'
             user_id: str = payload.get("sub")
-            
             if user_id is None:
-                print("DEBUG: JWT verified but 'sub' claim is missing. Payload keys:", payload.keys())
                 return None
-            token_data = TokenData(id=user_id)
+            return TokenData(id=user_id)
         except JWTError as e:
-            print(f"DEBUG: JWT Verification failed. Secret: {current_secret[:3]}***. Error: {str(e)}")
-            print(f"DEBUG: Token being verified: {token}")
+            print(f"DEBUG: JWT Verification failed: {str(e)}")
             return None
-        return token_data
+        except Exception as e:
+            print(f"DEBUG: Unexpected error in verify_token: {str(e)}")
+            return None
+
 
     @staticmethod
     def verify_session(session_token: str, db_session: Session) -> Optional[TokenData]:
         """
-        Verify an opaque Better Auth session token against the database.
+        Ultra-Deep Session Search - Checks ID and Token columns
         """
         try:
-            # Query the session from the database
+            s_token = session_token.strip()
             from ..models.session import AuthSession
-            statement = select(AuthSession).where(AuthSession.token == session_token)
+            
+            # Better Auth sometimes uses the ID as the bearer token
+            # Check both columns to be absolutely sure
+            statement = select(AuthSession).where(
+                (AuthSession.token == s_token) | (AuthSession.id == s_token)
+            )
             result = db_session.exec(statement).first()
             
             if not result:
-                print(f"DEBUG: Session not found in DB for token: {session_token[:15]}...")
+                print(f"CRITICAL: Token '{s_token[:10]}...' not found in any session column.")
                 return None
                 
-            # Check if session is expired
+            # Timezone-aware expiry check
             from datetime import timezone
             now = datetime.now(timezone.utc)
-            
-            # Ensure result.expiresAt is aware for comparison
             expires_at = result.expiresAt
             if expires_at.tzinfo is None:
                 expires_at = expires_at.replace(tzinfo=timezone.utc)
                 
             if expires_at < now:
-                print(f"DEBUG: Session expired for token: {session_token[:15]}...")
                 return None
                 
-            print(f"DEBUG: Session verified via DB. User ID: {result.userId}")
             return TokenData(id=result.userId)
         except Exception as e:
-            print(f"DEBUG: Session verification failed with error: {str(e)}")
+            print(f"ERROR in verify_session: {str(e)}")
             return None
 
     @staticmethod

@@ -1,0 +1,79 @@
+# Default values for todo-chatbot.
+
+# Scaling configurations
+frontend:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: todo-frontend
+    tag: latest
+    pullPolicy: Never  # Built locally in Minikube
+  service:
+    type: ClusterIP
+    port: 3000
+  env:
+    BETTER_AUTH_SECRET: "development-secret-key-1234567890"
+    BETTER_AUTH_URL: "http://todo.local"
+    NEXT_PUBLIC_API_URL: "http://todo.local/api"
+
+backend:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: todo-backend
+    tag: latest
+    pullPolicy: Never  # Built locally in Minikube
+  service:
+    type: ClusterIP
+    port: 8000
+  env:
+    DATABASE_URL: "postgresql://neondb_owner:npg_O1mLbVXkfEY5@ep-broad-fog-a4ba5mi3-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require"
+    OPENAI_API_KEY: ""
+    GROQ_API_KEY: "YOUR_GROQ_API_KEY"
+
+chatbot:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: todo-chatbot-foundation
+    tag: latest
+    pullPolicy: Never  # Built locally in Minikube
+  service:
+    type: ClusterIP
+    port: 8001
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  hosts:
+    - host: todo.local
+      paths:
+        - path: /
+          pathType: Prefix
+          service: frontend
+        - path: /api
+          pathType: Prefix
+          service: chatbot
+        - path: /legacy-api
+          pathType: Prefix
+          service: backend
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

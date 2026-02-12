@@ -1,0 +1,51 @@
+{{- if .Values.chatbot.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-chatbot
+  labels:
+    app: chatbot
+spec:
+  replicas: {{ .Values.chatbot.replicaCount }}
+  selector:
+    matchLabels:
+      app: chatbot
+  template:
+    metadata:
+      labels:
+        app: chatbot
+    spec:
+      containers:
+        - name: chatbot
+          image: "{{ .Values.chatbot.image.repository }}:{{ .Values.chatbot.image.tag }}"
+          imagePullPolicy: {{ .Values.chatbot.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8001
+              protocol: TCP
+          env:
+            - name: DATABASE_URL
+              value: "{{ .Values.backend.env.DATABASE_URL }}"
+            - name: GROQ_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: todo-secrets
+                  key: groq-api-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chatbot
+spec:
+  type: {{ .Values.chatbot.service.type }}
+  ports:
+    - port: {{ .Values.chatbot.service.port }}
+      targetPort: 8001
+      protocol: TCP
+      name: http
+      {{- if .Values.chatbot.service.nodePort }}
+      nodePort: {{ .Values.chatbot.service.nodePort }}
+      {{- end }}
+  selector:
+    app: chatbot
+{{- end }}

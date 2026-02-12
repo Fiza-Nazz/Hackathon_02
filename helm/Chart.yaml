@@ -1,0 +1,15 @@
+apiVersion: v2
+name: todo-chatbot
+description: A Helm chart for Todo Chatbot application with Phase V features
+type: application
+version: 1.0.0
+appVersion: "2.1.0"
+keywords:
+  - todo
+  - chatbot
+  - event-driven
+  - dapr
+  - kubernetes
+maintainers:
+  - name: Todo Team
+    email: team@todochatbot.com

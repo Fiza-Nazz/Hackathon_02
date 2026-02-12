@@ -1,0 +1,85 @@
+replicaCount: 2
+
+image:
+  repository: todo-backend
+  tag: latest
+  pullPolicy: Always
+
+backend:
+  port: 8000
+  replicas: 2
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+websocket:
+  port: 8001
+  replicas: 1
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+postgres:
+  enabled: true
+  port: 5432
+  database: tododb
+  username: todouser
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+redpanda:
+  enabled: true
+  port: 9092
+  schemaRegistry:
+    port: 8081
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+
+dapr:
+  enabled: true
+  version: "1.12.0"
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: "todo-chatbot.local"
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: todo-chatbot-tls
+      hosts:
+        - todo-chatbot.local
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8000
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
