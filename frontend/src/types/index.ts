@@ -10,11 +10,15 @@ export interface Task {
   title: string;
   description?: string;
   completed: boolean;
-  priority: number;
+  priority: 'low' | 'medium' | 'high';
   category: string;
   user_id: number;
   created_at: string;
   updated_at: string;
+  tags?: string[];
+  due_date?: string;
+  is_recurring?: boolean;
+  recurring_pattern?: 'daily' | 'weekly' | 'monthly' | 'yearly';
 }
 
 export interface Token {

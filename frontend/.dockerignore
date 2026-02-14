@@ -1,0 +1,7 @@
+node_modules
+.next
+.vercel
+build_log.txt
+*.db
+.env*
+! .env.example

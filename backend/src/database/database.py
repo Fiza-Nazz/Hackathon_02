@@ -11,11 +11,9 @@ from pathlib import Path
 # File is at: E:\Hackathon_02\backend\src\database\database.py
 # We want: E:\Hackathon_02\backend\.env
 # Solution: Go up 3 levels to reach 'backend'
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-load_dotenv(BASE_DIR / ".env")
-
-# Get database URL from environment variable, default to SQLite for local development
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./todo_app.db")
+# Professional Database Connection for TODOAI Engine
+# Ensure both Frontend (Next.js/Better-Auth) and Backend (FastAPI) use the same NEON cloud instance
+DATABASE_URL = os.getenv("DATABASE_URL") or "postgresql://neondb_owner:npg_O1mLbVXkfEY5@ep-broad-fog-a4ba5mi3-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require"
 
 # Create the database engine
 # Use connect_args={"check_same_thread": False} for SQLite to allow multiple threads

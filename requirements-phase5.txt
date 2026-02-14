@@ -1,0 +1,16 @@
+# Phase 5 Event-Driven Architecture Requirements
+
+# Kafka client
+aiokafka==0.8.11
+
+# WebSocket support
+websockets==12.0
+
+# Additional async support
+aiofiles==23.2.1
+
+# JSON schema validation
+jsonschema==4.20.0
+
+# Logging enhancements
+structlog==23.2.0

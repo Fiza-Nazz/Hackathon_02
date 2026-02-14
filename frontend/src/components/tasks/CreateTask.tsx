@@ -12,16 +12,20 @@ interface CreateTaskFormProps {
 interface CreateTaskData {
   title: string;
   description?: string;
-  priority: number;
+  priority: 'low' | 'medium' | 'high';
   category: string;
+  tags: string;
+  due_date: string;
 }
 
 const CreateTask: React.FC<CreateTaskFormProps> = ({ onSuccess }) => {
   const [formData, setFormData] = useState<CreateTaskData>({
     title: '',
     description: '',
-    priority: 1,
+    priority: 'medium',
     category: 'General',
+    tags: '',
+    due_date: '',
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -32,7 +36,7 @@ const CreateTask: React.FC<CreateTaskFormProps> = ({ onSuccess }) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'priority' ? parseInt(value) : value
+      [name]: value
     }));
   };
 
@@ -54,9 +58,11 @@ const CreateTask: React.FC<CreateTaskFormProps> = ({ onSuccess }) => {
         priority: formData.priority,
         category: formData.category,
         completed: false,
+        tags: formData.tags ? formData.tags.split(',').map(t => t.trim()) : [],
+        due_date: formData.due_date || undefined,
       });
 
-      setFormData({ title: '', description: '', priority: 1, category: 'General' });
+      setFormData({ title: '', description: '', priority: 'medium', category: 'General', tags: '', due_date: '' });
       if (onSuccess) onSuccess();
     } catch (err: any) {
       setError(err.message || 'Transmission failed');
@@ -94,9 +100,9 @@ const CreateTask: React.FC<CreateTaskFormProps> = ({ onSuccess }) => {
             onChange={handleChange}
             className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-electric-blue transition-all text-xs text-gray-400"
           >
-            <option value={1}>Low Priority</option>
-            <option value={2}>Medium Priority</option>
-            <option value={3}>High Priority</option>
+            <option value="low">🟢 Low Priority</option>
+            <option value="medium">🟡 Medium Priority</option>
+            <option value="high">🔴 High Priority</option>
           </select>
           <input
             type="text"
@@ -105,6 +111,24 @@ const CreateTask: React.FC<CreateTaskFormProps> = ({ onSuccess }) => {
             onChange={handleChange}
             className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-electric-blue transition-all text-xs text-gray-400"
             placeholder="Category (e.g. Work)"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <input
+            type="text"
+            name="tags"
+            value={formData.tags}
+            onChange={handleChange}
+            className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-electric-blue transition-all text-xs text-gray-400"
+            placeholder="Tags (comma-separated)"
+          />
+          <input
+            type="datetime-local"
+            name="due_date"
+            value={formData.due_date}
+            onChange={handleChange}
+            className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-electric-blue transition-all text-xs text-gray-400"
           />
         </div>
 

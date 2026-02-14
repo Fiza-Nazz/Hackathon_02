@@ -80,7 +80,7 @@ export default function DashboardPage() {
                             </div>
                             <div className="flex flex-col">
                                 <span className="text-[10px] uppercase tracking-widest font-black text-gray-500">Active Operator</span>
-                                <span className="text-sm font-bold text-white">{user?.email?.split('@')[0] || 'Unknown'}</span>
+                                <span className="text-sm font-bold text-white">{user?.email || 'Unknown'}</span>
                             </div>
                         </div>
                         <div className="h-10 w-px bg-white/10 mx-2" />

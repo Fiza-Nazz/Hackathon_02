@@ -7,9 +7,12 @@ def create_db_and_tables():
     """
     Create database tables for User and Task models.
     """
-    print("Creating database tables...")
-    SQLModel.metadata.create_all(engine)
-    print("Database tables created successfully.")
+    print("RE-INITIALIZING TABLES: Starting metadata sync...")
+    try:
+        SQLModel.metadata.create_all(engine)
+        print("RE-INITIALIZING TABLES: Success. Neural link is active.")
+    except Exception as e:
+        print(f"RE-INITIALIZING TABLES: CRITICAL FAILURE: {e}")
 
 
 if __name__ == "__main__":

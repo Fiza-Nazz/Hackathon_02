@@ -1,0 +1,100 @@
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: todo-postgres
+    plan: free
+    ipAddress: private
+    env: postgres
+    envVars:
+      - key: POSTGRES_USER
+        value: todouser
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+      - key: POSTGRES_DB
+        value: tododb
+    disk:
+      name: postgres-data
+      mountPath: /var/lib/postgresql/data
+      sizeGB: 1
+
+  # Redis Cache (optional, for performance)
+  - type: pserv
+    name: todo-redis
+    plan: free
+    ipAddress: private
+    env: redis
+    envVars: []
+
+  # Backend API Service
+  - type: web
+    name: todo-backend
+    plan: free
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile.render
+    branch: main
+    buildCommand: ""
+    startCommand: "uvicorn src.main:app --host 0.0.0.0 --port 8000"
+    envVars:
+      - key: DATABASE_URL
+        fromService:
+          name: todo-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: todo-redis
+          property: connectionString
+      - key: ENVIRONMENT
+        value: production
+      - key: KAFKA_BROKERS
+        value: "localhost:9092"
+      - key: DAPR_HOST
+        value: localhost
+      - key: DAPR_PORT
+        value: "3500"
+    healthCheckPath: /health
+    healthCheckInterval: 30
+    healthCheckTimeout: 10
+    maxShutdownDelay: 30
+    preDeployCommand: "python -m src.database.init_db"
+    routes:
+      - path: /
+        destination: http://localhost:8000
+
+  # WebSocket Service
+  - type: web
+    name: todo-websocket
+    plan: free
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile.render
+    branch: main
+    buildCommand: ""
+    startCommand: "uvicorn src.main:app --host 0.0.0.0 --port 8001"
+    envVars:
+      - key: DATABASE_URL
+        fromService:
+          name: todo-postgres
+          property: connectionString
+      - key: SERVICE_TYPE
+        value: websocket
+      - key: KAFKA_BROKERS
+        value: "localhost:9092"
+    healthCheckPath: /health
+    routes:
+      - path: /ws
+        destination: http://localhost:8001
+
+databases:
+  - name: todo-postgres
+    plan: free
+    ipAddress: private
+    postgresMajorVersion: "16"
+
+envVarGroups:
+  - name: production
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      - key: CORS_ORIGINS
+        value: "https://frontend-eight-gilt-98.vercel.app,http://localhost:3000"

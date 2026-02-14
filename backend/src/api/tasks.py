@@ -457,7 +457,7 @@ def remove_task_tag(
 
 
 @router.put("/{task_id}/due-date")
-def update_task_due_date(
+async def update_task_due_date(
     task_id: int,
     due_date: Optional[datetime],
     current_user: User = Depends(get_current_user),
@@ -600,7 +600,7 @@ def read_task(
 
 
 @router.put("/{task_id}", response_model=TaskRead)
-def update_task(
+async def update_task(
     task_id: int,
     task_update: TaskUpdate,
     current_user: User = Depends(get_current_user),
@@ -614,11 +614,23 @@ def update_task(
     if not db_task:
         raise HTTPException(status_code=404, detail="Task not found")
 
+    # Store old values for event
+    old_values = {
+        "title": db_task.title,
+        "description": db_task.description,
+        "completed": db_task.completed,
+        "priority": db_task.priority,
+        "due_date": db_task.due_date
+    }
+
     # Update task fields if they are provided
     update_data = task_update.model_dump(exclude_unset=True)
     tags_to_update = update_data.pop('tags', None)
     
+    updated_fields = []
     for field, value in update_data.items():
+        if getattr(db_task, field) != value:
+            updated_fields.append(field)
         setattr(db_task, field, value)
 
     db_task.updated_at = datetime.utcnow()
@@ -641,6 +653,34 @@ def update_task(
     session.commit()
     session.refresh(db_task)
     
+    # Publish task updated event
+    try:
+        publisher = await get_publisher()
+        new_values = {
+            "title": db_task.title,
+            "description": db_task.description,
+            "completed": db_task.completed,
+            "priority": db_task.priority,
+            "due_date": db_task.due_date
+        }
+        from ..events.schemas import create_event
+        event = create_event(
+            event_type="task.updated",
+            aggregate_id=str(task_id),
+            user_id=current_user.id,
+            data={
+                "task_id": task_id,
+                "title": db_task.title,
+                "user_id": current_user.id,
+                "old_values": old_values,
+                "new_values": new_values,
+                "updated_fields": updated_fields
+            }
+        )
+        await publisher.publish_event(event)
+    except Exception as e:
+        logger.error(f"Failed to publish task updated event: {e}")
+    
     # Return with tags
     task_dict = db_task.model_dump()
     if tags_to_update is not None:
@@ -654,7 +694,7 @@ def update_task(
 
 
 @router.delete("/{task_id}")
-def delete_task(
+async def delete_task(
     task_id: int,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
@@ -667,15 +707,39 @@ def delete_task(
     if not db_task:
         raise HTTPException(status_code=404, detail="Task not found")
 
+    # Store task data before deletion
+    task_title = db_task.title
+    was_completed = db_task.completed
+
     session.delete(db_task)
     session.commit()
+    
+    # Publish task deleted event
+    try:
+        publisher = await get_publisher()
+        from ..events.schemas import create_event
+        event = create_event(
+            event_type="task.deleted",
+            aggregate_id=str(task_id),
+            user_id=current_user.id,
+            data={
+                "task_id": task_id,
+                "title": task_title,
+                "user_id": current_user.id,
+                "deleted_at": datetime.utcnow().isoformat(),
+                "was_completed": was_completed
+            }
+        )
+        await publisher.publish_event(event)
+    except Exception as e:
+        logger.error(f"Failed to publish task deleted event: {e}")
     
     # Log the event
     audit_log = AuditLog(
         event_type="task.deleted",
         aggregate_id=str(task_id),
         user_id=current_user.id,
-        event_data=json.dumps({"task_id": task_id, "title": db_task.title})
+        event_data=json.dumps({"task_id": task_id, "title": task_title})
     )
     session.add(audit_log)
     session.commit()

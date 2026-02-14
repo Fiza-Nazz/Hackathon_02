@@ -1,0 +1,33 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: task-pubsub
+spec:
+  type: pubsub.kafka
+  version: v1
+  metadata:
+  - name: brokers
+    value: "redpanda:9092"
+  - name: consumerGroup
+    value: "todo-app"
+  - name: authRequired
+    value: "false"
+  - name: maxMessageBytes
+    value: "1048576"
+---
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: task-statestore
+spec:
+  type: state.postgresql
+  version: v1
+  metadata:
+  - name: connectionString
+    secretKeyRef:
+      name: postgres-secret
+      key: connection-string
+  - name: tableName
+    value: "dapr_state"
+  - name: cleanupInterval
+    value: "5m"

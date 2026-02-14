@@ -1,0 +1,435 @@
+# MCP Tool Contracts
+# Specification for 5 task management tools exposed via Model Context Protocol
+# Feature: 004-chatbot-db-mcp
+# Version: 1.0
+# Date: 2026-01-09
+
+---
+
+## Contract Standard
+
+All tools MUST follow this contract:
+- Input validation via Pydantic models
+- Return structured response format
+- Never raise exceptions
+- Enforce user data isolation
+- Use consistent error codes
+
+### Response Format
+
+**Success Response**:
+```yaml
+success: true
+data:
+  # Tool-specific data
+error: null
+```
+
+**Error Response**:
+```yaml
+success: false
+data: null
+error:
+  code: INVALID_INPUT | NOT_FOUND | UNAUTHORIZED | DATABASE_ERROR
+  message: Human-readable error description
+```
+
+---
+
+## Tool 1: add_task
+
+**Purpose**: Create a new task for a user
+
+**Input Schema**:
+```yaml
+user_id:
+  type: string
+  required: true
+  description: User identifier from JWT token
+  example: "user_abc123"
+
+title:
+  type: string
+  required: true
+  min_length: 1
+  max_length: 200
+  description: Task title
+  example: "Buy groceries"
+
+description:
+  type: string
+  required: false
+  min_length: 0
+  max_length: 1000
+  description: Optional task description
+  example: "Milk, eggs, bread, and butter"
+```
+
+**Success Response**:
+```yaml
+success: true
+data:
+  task_id: 123
+  status: "created"
+  title: "Buy groceries"
+error: null
+```
+
+**Error Responses**:
+```yaml
+# Title too short or empty
+success: false
+error:
+  code: INVALID_INPUT
+  message: "Title must be between 1 and 200 characters"
+
+# Title too long
+success: false
+error:
+  code: INVALID_INPUT
+  message: "Title exceeds 200 character limit"
+
+# Description too long
+success: false
+error:
+  code: INVALID_INPUT
+  message: "Description exceeds 1000 character limit"
+
+# Database error
+success: false
+error:
+  code: DATABASE_ERROR
+  message: "Failed to create task"
+```
+
+**Validation Rules**:
+- Title: Required, 1-200 characters
+- Description: Optional, 0-1000 characters if provided
+- At least title must be provided
+- User ID must be non-empty string
+
+---
+
+## Tool 2: list_tasks
+
+**Purpose**: List all tasks for a user with optional status filter
+
+**Input Schema**:
+```yaml
+user_id:
+  type: string
+  required: true
+  description: User identifier from JWT token
+  example: "user_abc123"
+
+status:
+  type: string
+  required: false
+  enum: ["all", "pending", "completed"]
+  default: "all"
+  description: Filter tasks by completion status
+  example: "pending"
+```
+
+**Success Response**:
+```yaml
+success: true
+data:
+  tasks:
+    - id: 123
+      title: "Buy groceries"
+      completed: false
+      created_at: "2026-01-09T10:30:00Z"
+    - id: 124
+      title: "Call mom"
+      completed: true
+      created_at: "2026-01-09T09:15:00Z"
+  total: 2
+error: null
+```
+
+**Error Responses**:
+```yaml
+# Invalid status value
+success: false
+error:
+  code: INVALID_INPUT
+  message: "Status must be one of: all, pending, completed"
+
+# Database error
+success: false
+error:
+  code: DATABASE_ERROR
+  message: "Failed to retrieve tasks"
+```
+
+**Validation Rules**:
+- User ID required, non-empty
+- Status optional, defaults to "all"
+- Status must be one of: all, pending, completed
+
+**Query Logic**:
+- status = "all": SELECT * FROM tasks WHERE user_id = ?
+- status = "pending": SELECT * FROM tasks WHERE user_id = ? AND completed = FALSE
+- status = "completed": SELECT * FROM tasks WHERE user_id = ? AND completed = TRUE
+
+---
+
+## Tool 3: complete_task
+
+**Purpose**: Mark a specific task as completed
+
+**Input Schema**:
+```yaml
+user_id:
+  type: string
+  required: true
+  description: User identifier from JWT token
+  example: "user_abc123"
+
+task_id:
+  type: integer
+  required: true
+  min: 1
+  description: Task identifier to mark complete
+  example: 123
+```
+
+**Success Response**:
+```yaml
+success: true
+data:
+  task_id: 123
+  status: "completed"
+  title: "Buy groceries"
+error: null
+```
+
+**Error Responses**:
+```yaml
+# Task not found or doesn't belong to user
+success: false
+error:
+  code: NOT_FOUND
+  message: "Task not found"
+
+# Task already completed (idempotent - still returns success)
+success: true
+data:
+  task_id: 123
+  status: "completed"
+  title: "Buy groceries"
+  note: "Task was already completed"
+error: null
+
+# Database error
+success: false
+error:
+  code: DATABASE_ERROR
+  message: "Failed to update task"
+```
+
+**Validation Rules**:
+- User ID required, non-empty
+- Task ID required, positive integer (>= 1)
+
+**Query Logic**:
+- UPDATE tasks SET completed = TRUE, updated_at = NOW() WHERE id = ? AND user_id = ?
+- If 0 rows affected → return NOT_FOUND
+- If 1 row affected → return success
+
+**Security Note**: Return NOT_FOUND (not UNAUTHORIZED) for tasks owned by other users (security by obscurity)
+
+---
+
+## Tool 4: delete_task
+
+**Purpose**: Permanently delete a task
+
+**Input Schema**:
+```yaml
+user_id:
+  type: string
+  required: true
+  description: User identifier from JWT token
+  example: "user_abc123"
+
+task_id:
+  type: integer
+  required: true
+  min: 1
+  description: Task identifier to delete
+  example: 123
+```
+
+**Success Response**:
+```yaml
+success: true
+data:
+  task_id: 123
+  status: "deleted"
+  title: "Buy groceries"
+error: null
+```
+
+**Error Responses**:
+```yaml
+# Task not found or doesn't belong to user
+success: false
+error:
+  code: NOT_FOUND
+  message: "Task not found"
+
+# Database error
+success: false
+error:
+  code: DATABASE_ERROR
+  message: "Failed to delete task"
+```
+
+**Validation Rules**:
+- User ID required, non-empty
+- Task ID required, positive integer (>= 1)
+
+**Query Logic**:
+- DELETE FROM tasks WHERE id = ? AND user_id = ?
+- Return task title before deletion
+- If 0 rows affected → return NOT_FOUND
+
+**Security Note**: Return NOT_FOUND (not UNAUTHORIZED) for tasks owned by other users (security by obscurity)
+
+---
+
+## Tool 5: update_task
+
+**Purpose**: Update task title and/or description
+
+**Input Schema**:
+```yaml
+user_id:
+  type: string
+  required: true
+  description: User identifier from JWT token
+  example: "user_abc123"
+
+task_id:
+  type: integer
+  required: true
+  min: 1
+  description: Task identifier to update
+  example: 123
+
+title:
+  type: string
+  required: false
+  min_length: 1
+  max_length: 200
+  description: New task title
+  example: "Buy groceries and milk"
+
+description:
+  type: string
+  required: false
+  min_length: 0
+  max_length: 1000
+  description: New task description
+  example: "Updated shopping list"
+```
+
+**Success Response**:
+```yaml
+success: true
+data:
+  task_id: 123
+  status: "updated"
+  title: "Buy groceries and milk"
+error: null
+```
+
+**Error Responses**:
+```yaml
+# Neither title nor description provided
+success: false
+error:
+  code: INVALID_INPUT
+  message: "At least one field (title or description) must be provided"
+
+# Task not found or doesn't belong to user
+success: false
+error:
+  code: NOT_FOUND
+  message: "Task not found"
+
+# Title too short or empty
+success: false
+error:
+  code: INVALID_INPUT
+  message: "Title must be between 1 and 200 characters"
+
+# Title too long
+success: false
+error:
+  code: INVALID_INPUT
+  message: "Title exceeds 200 character limit"
+
+# Description too long
+success: false
+error:
+  code: INVALID_INPUT
+  message: "Description exceeds 1000 character limit"
+
+# Database error
+success: false
+error:
+  code: DATABASE_ERROR
+  message: "Failed to update task"
+```
+
+**Validation Rules**:
+- User ID required, non-empty
+- Task ID required, positive integer (>= 1)
+- At least one of title or description must be provided
+- Title: 1-200 characters if provided
+- Description: 0-1000 characters if provided
+
+**Query Logic**:
+- Build UPDATE query dynamically based on provided fields
+- UPDATE tasks SET title = ?, description = ?, updated_at = NOW() WHERE id = ? AND user_id = ?
+- If 0 rows affected → return NOT_FOUND
+
+**Security Note**: Return NOT_FOUND (not UNAUTHORIZED) for tasks owned by other users (security by obscurity)
+
+---
+
+## Security Requirements
+
+All tools MUST enforce:
+
+1. **User Isolation**:
+   - Filter all queries by `user_id`
+   - Verify task ownership before modification/deletion
+   - Return NOT_FOUND instead of UNAUTHORIZED for missing resources
+
+2. **Input Validation**:
+   - Validate all inputs via Pydantic models
+   - Sanitize inputs before database operations
+   - Never trust user input
+
+3. **Error Handling**:
+   - Catch all exceptions
+   - Convert to appropriate error code
+   - Never expose raw database errors
+   - Log full errors server-side
+
+4. **Idempotency**:
+   - Operations safe to retry
+   - complete_task idempotent (no error if already complete)
+
+---
+
+## Performance Requirements
+
+- **Response Time**: < 500ms per tool execution (95th percentile)
+- **Database Query**: < 100ms per query
+- **Concurrent Requests**: Handle multiple simultaneous tool calls
+- **Scalability**: Stateless design enables horizontal scaling

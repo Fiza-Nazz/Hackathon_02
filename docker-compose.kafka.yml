@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # Redpanda Kafka (Single Node)
+  redpanda:
+    image: redpandadata/redpanda:latest
+    container_name: redpanda-kafka
+    command:
+      - redpanda start
+      - --smp 1
+      - --memory 1G
+      - --reserve-memory 0M
+      - --overprovisioned
+      - --node-id 0
+      - --kafka-addr PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
+      - --advertise-kafka-addr PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
+      - --pandaproxy-addr 0.0.0.0:8082
+      - --advertise-pandaproxy-addr localhost:8082
+      - --schema-registry-addr 0.0.0.0:8081
+      - --rpc-addr 0.0.0.0:33145
+      - --advertise-rpc-addr redpanda:33145
+      - --check=false
+    ports:
+      - "9092:9092"     # Kafka API
+      - "8081:8081"     # Schema Registry
+      - "8082:8082"     # REST Proxy
+      - "9644:9644"     # Admin API
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
+    networks:
+      - todo-network
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster info"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Redpanda Console (Web UI)
+  console:
+    image: redpandadata/console:latest
+    container_name: redpanda-console
+    depends_on:
+      - redpanda
+    ports:
+      - "8080:8080"
+    environment:
+      CONFIG_FILEPATH: /tmp/config.yml
+      KAFKA_BROKERS: redpanda:29092
+      KAFKA_SCHEMAREGISTRY_ENABLED: true
+      KAFKA_SCHEMAREGISTRY_URLS: http://redpanda:8081
+    volumes:
+      - ./console-config.yml:/tmp/config.yml:ro
+    networks:
+      - todo-network
+
+volumes:
+  redpanda_data:
+
+networks:
+  todo-network:
+    driver: bridge

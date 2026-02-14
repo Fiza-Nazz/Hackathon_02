@@ -1,9 +1,8 @@
 import axios from 'axios';
-import { authClient } from '@/lib/auth-client';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://fizu123-todo-backend.hf.space';
+// Use backend API for tasks (port 8000), not chatbot (port 8001)
+const API_BASE_URL = 'http://localhost:8000';
 
-// Unified Alpha-Grade API Instance
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
   headers: {
@@ -12,23 +11,13 @@ const api = axios.create({
 });
 
 api.interceptors.request.use(
-  async (config) => {
-    let token: string | undefined;
-
-    // ONLY check localStorage - never hit Better Auth session API
+  (config) => {
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('access_token');
-      if (stored && stored.length > 10) {
-        token = stored;
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
       }
     }
-
-    if (token) {
-      config.headers.Authorization = `Bearer ${token.trim()}`;
-    } else {
-      console.warn("[API Engine] No token found in localStorage, request may fail.");
-    }
-
     return config;
   },
   (error) => Promise.reject(error)
@@ -38,8 +27,12 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      console.error("[API Engine] 401 Unauthorized Detected - Neural Link Severed");
-      // Don't redirect immediately to avoid loops, let the store handle it
+      console.error("[API Engine] 401 Unauthorized - Redirecting to Login");
+      if (typeof window !== 'undefined') {
+        // Clear token if invalid
+        localStorage.removeItem('access_token');
+        // We could redirect here, but better to let the store handle state
+      }
     }
     return Promise.reject(error);
   }

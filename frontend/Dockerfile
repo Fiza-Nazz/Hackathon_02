@@ -10,7 +10,9 @@ COPY package.json package-lock.json ./
 RUN apk add --no-cache python3 make g++
 
 # Install dependencies (ignoring peer deps to save time)
-RUN npm install --legacy-peer-deps --no-audit --no-fund
+RUN npm config set fetch-retry-maxtimeout 600000 && \
+    npm config set fetch-retry-mintimeout 100000 && \
+    npm install --legacy-peer-deps --no-audit --no-fund
 
 # Copy source
 COPY . .

@@ -105,21 +105,67 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
-    - name: Deploy to Kubernetes
+    - name: Configure kubectl
+      uses: azure/k8s-set-context@v3
+      with:
+        method: kubeconfig
+        kubeconfig: ${{ secrets.KUBE_CONFIG }}
+    
+    - name: Install Dapr
       run: |
-        echo "Deploying to Kubernetes cluster..."
-        # Add your deployment commands here
-        # kubectl apply -f k8s/
-        # helm upgrade --install todo-chatbot ./helm
+        wget -q https://raw.githubusercontent.com/dapr/cli/master/install/install.sh -O - | /bin/bash
+        dapr init -k --wait --timeout 300
+    
+    - name: Deploy Kafka
+      run: |
+        kubectl apply -f k8s/kafka-deployment.yaml
+        kubectl wait --for=condition=ready pod -l app=kafka --timeout=300s
+    
+    - name: Deploy Dapr Components
+      run: |
+        kubectl apply -f dapr-components/
+    
+    - name: Deploy Microservices
+      run: |
+        kubectl apply -f k8s/notification-service.yaml
+        kubectl apply -f k8s/recurring-task-service.yaml
+        kubectl wait --for=condition=ready pod -l app=notification-service --timeout=300s
+        kubectl wait --for=condition=ready pod -l app=recurring-task-service --timeout=300s
+    
+    - name: Deploy Main Services
+      run: |
+        kubectl apply -f charts/todo-chatbot/templates/
+        kubectl rollout status deployment/todo-chatbot-backend
+        kubectl rollout status deployment/todo-chatbot-frontend
+        kubectl rollout status deployment/todo-chatbot-chatbot
     
     - name: Verify deployment
       run: |
-        echo "Verifying deployment..."
-        # Add your verification commands here
-        # kubectl rollout status deployment/todo-backend
-        # kubectl get pods
+        echo "📊 Deployment Status:"
+        kubectl get pods
+        kubectl get services
+        kubectl get deployments
     
     - name: Run smoke tests
       run: |
-        echo "Running smoke tests..."
-        # Add your smoke test commands here
+        echo "🧪 Running smoke tests..."
+        # Wait for services to be ready
+        sleep 30
+        
+        # Test backend health
+        BACKEND_URL=$(kubectl get svc backend -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        curl -f http://$BACKEND_URL:8000/health || exit 1
+        
+        # Test Kafka connectivity
+        kubectl exec -it $(kubectl get pod -l app=kafka -o jsonpath='{.items[0].metadata.name}') -- rpk cluster info
+        
+        echo "✅ All smoke tests passed!"
+    
+    - name: Notify deployment
+      if: always()
+      run: |
+        if [ ${{ job.status }} == 'success' ]; then
+          echo "✅ Deployment successful!"
+        else
+          echo "❌ Deployment failed!"
+        fi

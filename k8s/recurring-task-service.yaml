@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recurring-task-service
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: recurring-task-service
+  template:
+    metadata:
+      labels:
+        app: recurring-task-service
+    spec:
+      containers:
+      - name: recurring-task-service
+        image: python:3.13-slim
+        command: ["python", "/app/services/recurring_task_service.py"]
+        workingDir: /app
+        env:
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka:9092"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: connectionString
+        volumeMounts:
+        - name: app-code
+          mountPath: /app
+      volumes:
+      - name: app-code
+        hostPath:
+          path: /hosthome/Hackathon_02
+          type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: recurring-task-service
+  namespace: default
+spec:
+  selector:
+    app: recurring-task-service
+  ports:
+  - port: 8002
+    targetPort: 8002
+  type: ClusterIP

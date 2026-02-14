@@ -6,32 +6,46 @@ import { MessageSquare, Bot, Sparkles, Minimize2, X, Send, User, Trash2 } from '
 import { useAuthStore } from '../../store/auth';
 import { useTasksStore } from '../../store/tasks';
 import ReactMarkdown from 'react-markdown';
+import { useChat, Message } from 'ai/react';
 
-interface Message {
-    role: 'user' | 'assistant';
-    content: string;
-    timestamp?: string;
-}
-
-const ChatWidget: React.FC = () => {
+const ChatWidget = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const [inputValue, setInputValue] = useState('');
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
     const [language, setLanguage] = useState<'en' | 'ur'>('en');
     const { user } = useAuthStore();
     const { fetchTasks } = useTasksStore();
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Auto-scroll to bottom
+    const { messages, input, handleInputChange, handleSubmit: originalHandleSubmit, isLoading, setMessages } = useChat({
+        api: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/api/chat/message`,
+        initialMessages: [],
+        body: {
+            user_id: String(user?.id || '1'),
+            language: language
+        },
+        headers: {
+            Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('access_token') : ''}`
+        },
+        onFinish: (_message: Message) => {
+            console.log("Neural Command Finalized. Syncing Dashboard...");
+            setTimeout(() => fetchTasks(), 500);
+            setTimeout(() => fetchTasks(), 1500);
+            setTimeout(() => fetchTasks(), 4000);
+        },
+        onError: (error: Error) => {
+            console.error("Neural Link Error:", error);
+        }
+    });
+
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
     useEffect(() => {
-        if (isOpen) {
-            scrollToBottom();
-            // Load history only once when opening
+        scrollToBottom();
+    }, [messages, isLoading]);
+
+    useEffect(() => {
+        if (isOpen && messages.length === 0) {
             loadHistory();
         }
     }, [isOpen]);
@@ -39,11 +53,16 @@ const ChatWidget: React.FC = () => {
     const loadHistory = async () => {
         try {
             const userId = String(user?.id || '1');
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
             const response = await fetch(`${baseUrl}/api/chat/history/${userId}`);
             if (response.ok) {
                 const history = await response.json();
-                setMessages(history);
+                const mappedHistory: Message[] = history.map((msg: any) => ({
+                    id: msg.id || Math.random().toString(),
+                    role: (msg.role === 'user' || msg.role === 'assistant' || msg.role === 'system' || msg.role === 'data' ? msg.role : 'assistant') as any,
+                    content: msg.content
+                }));
+                setMessages(mappedHistory);
             }
         } catch (error) {
             console.error("Failed to load history:", error);
@@ -54,64 +73,17 @@ const ChatWidget: React.FC = () => {
         setIsOpen(!isOpen);
     };
 
-    const handleSendMessage = async () => {
-        if (!inputValue.trim() || isLoading) return;
-
-        const userMsg = inputValue.trim();
-        setInputValue('');
-        setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
-        setIsLoading(true);
-
-        try {
-            const userId = String(user?.id || '1');
-            const token = localStorage.getItem('access_token');
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-            const url = `${baseUrl}/api/chat/message`;
-
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': token ? `Bearer ${token}` : ''
-                },
-                body: JSON.stringify({
-                    message: userMsg,
-                    user_id: userId,
-                    language: language
-                })
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setMessages(prev => [...prev, { role: 'assistant', content: data.content }]);
-
-                // ENHANCED Dashboard Sync: Cloud DB needs more time to commit
-                setTimeout(async () => {
-                    await fetchTasks();
-                }, 1200); // Increased for PostgreSQL cloud propagation
-
-                // Fallback refresh to catch any delayed commits
-                setTimeout(async () => {
-                    await fetchTasks();
-                }, 2500);
-            } else {
-                throw new Error("Neural disruption");
-            }
-        } catch (error) {
-            setMessages(prev => [...prev, {
-                role: 'assistant',
-                content: "⚠️ **SYSTEM ERROR**: Neural Link disrupted. Please check backend connection."
-            }]);
-        } finally {
-            setIsLoading(false);
-        }
+    const onSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!input?.trim() || isLoading) return;
+        originalHandleSubmit(e);
     };
 
     const handleClearChat = async () => {
         if (!confirm("Wipe all neural logs?")) return;
         try {
             const userId = String(user?.id || '1');
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
             await fetch(`${baseUrl}/api/chat/history/${userId}`, { method: 'DELETE' });
             setMessages([]);
         } catch (error) {
@@ -183,11 +155,11 @@ const ChatWidget: React.FC = () => {
                                 </div>
                             )}
 
-                            {messages.map((msg, idx) => (
+                            {messages.map((msg: Message, idx: number) => (
                                 <motion.div
                                     initial={{ opacity: 0, x: msg.role === 'user' ? 20 : -20 }}
                                     animate={{ opacity: 1, x: 0 }}
-                                    key={idx}
+                                    key={msg.id || idx}
                                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                                 >
                                     <div className={`max-w-[85%] flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -203,12 +175,12 @@ const ChatWidget: React.FC = () => {
                                             } ${language === 'ur' && msg.role === 'assistant' ? 'font-urdu text-base text-right' : ''}`}>
                                             <ReactMarkdown
                                                 components={{
-                                                    strong: ({ node, ...props }) => <span className="font-bold text-electric-blue" {...props} />,
-                                                    em: ({ node, ...props }) => <span className="italic text-gray-400" {...props} />,
-                                                    ul: ({ node, ...props }) => <ul className="list-disc pl-4 my-2 space-y-1" {...props} />,
-                                                    li: ({ node, ...props }) => <li className="text-gray-300" {...props} />,
-                                                    p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />
-                                                }}
+                                                    strong: (props: any) => <span className="font-bold text-electric-blue">{props.children}</span>,
+                                                    em: (props: any) => <span className="italic text-gray-400">{props.children}</span>,
+                                                    ul: (props: any) => <ul className="list-disc pl-4 my-2 space-y-1">{props.children}</ul>,
+                                                    li: (props: any) => <li className="text-gray-300">{props.children}</li>,
+                                                    p: (props: any) => <p className="mb-2 last:mb-0">{props.children}</p>
+                                                } as any}
                                             >
                                                 {msg.content}
                                             </ReactMarkdown>
@@ -234,26 +206,27 @@ const ChatWidget: React.FC = () => {
 
                         {/* Input Area */}
                         <div className="p-6 bg-black/40 border-t border-white/5 backdrop-blur-xl">
-                            <div className="relative group">
-                                <div className="absolute -inset-0.5 bg-gradient-to-r from-electric-blue/40 to-transparent rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition duration-500" />
-                                <div className="relative flex gap-2 bg-black/60 border border-white/10 rounded-2xl p-1.5 focus-within:border-electric-blue/40 transition-all">
-                                    <input
-                                        type="text"
-                                        value={inputValue}
-                                        onChange={(e) => setInputValue(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                                        placeholder="Enter Neural Command..."
-                                        className="flex-1 bg-transparent px-4 py-3 text-white text-sm focus:outline-none placeholder:text-gray-600 font-mono"
-                                    />
-                                    <button
-                                        onClick={handleSendMessage}
-                                        disabled={!inputValue.trim() || isLoading}
-                                        className="bg-electric-blue hover:bg-electric-blue/80 disabled:opacity-50 disabled:cursor-not-allowed text-black p-3 rounded-xl transition-all shadow-glow-sm"
-                                    >
-                                        <Send className="w-5 h-5" />
-                                    </button>
+                            <form onSubmit={onSubmit}>
+                                <div className="relative group">
+                                    <div className="absolute -inset-0.5 bg-gradient-to-r from-electric-blue/40 to-transparent rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition duration-500" />
+                                    <div className="relative flex gap-2 bg-black/60 border border-white/10 rounded-2xl p-1.5 focus-within:border-electric-blue/40 transition-all">
+                                        <input
+                                            type="text"
+                                            value={input || ''}
+                                            onChange={handleInputChange}
+                                            placeholder="Enter Neural Command..."
+                                            className="flex-1 bg-transparent px-4 py-3 text-white text-sm focus:outline-none placeholder:text-gray-600 font-mono"
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={!input?.trim() || isLoading}
+                                            className="bg-electric-blue hover:bg-electric-blue/80 disabled:opacity-50 disabled:cursor-not-allowed text-black p-3 rounded-xl transition-all shadow-glow-sm"
+                                        >
+                                            <Send className="w-5 h-5" />
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
+                            </form>
                             <div className="mt-4 flex items-center justify-between px-2">
                                 <div className="flex gap-1">
                                     <div className="w-1 h-1 bg-electric-blue rounded-full animate-pulse" />
@@ -267,7 +240,6 @@ const ChatWidget: React.FC = () => {
                 )}
             </AnimatePresence>
 
-            {/* Toggle Button */}
             <motion.button
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 whileTap={{ scale: 0.9 }}
@@ -291,7 +263,7 @@ const ChatWidget: React.FC = () => {
             </motion.button>
             <style jsx global>{`
                 @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap');
-                
+
                 .font-urdu {
                     font-family: 'Noto Nastaliq Urdu', serif;
                     line-height: 2.2;

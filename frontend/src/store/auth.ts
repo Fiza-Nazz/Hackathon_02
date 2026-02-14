@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { authClient } from '@/lib/auth-client';
 import { User } from '../types';
 
 interface AuthState {
@@ -16,6 +15,8 @@ interface AuthState {
   setError: (error: string | null) => void;
 }
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
@@ -25,8 +26,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (email, password) => {
     set({ loading: true, error: null });
     try {
-      // RADICAL FIX: Call our direct auth endpoint instead of Better Auth
-      const response = await fetch('/api/auth-direct/login', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -35,26 +35,29 @@ export const useAuthStore = create<AuthState>((set) => ({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
+        throw new Error(data.detail || 'Login failed');
       }
 
-      const token = data.token;
-      const user = data.user;
-
-      console.log('[Auth Store - DIRECT] Login successful, token:', token ? 'Present' : 'Missing');
+      // Backend returns { "access_token": "...", "token_type": "bearer" }
+      const token = data.access_token;
 
       if (token) {
         localStorage.setItem('access_token', token);
-        console.log('[Auth Store - DIRECT] Token saved to localStorage');
       }
 
+      // In a real app, we'd fetch /me to get full user details
+      // For now, let's decode the token to get the user ID
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(window.atob(base64));
+
       set({
-        user: { id: user.id, email: user.email } as any,
+        user: { id: payload.sub, email: email } as any,
         isAuthenticated: true,
         loading: false
       });
     } catch (error: any) {
-      console.error('[Auth Store - DIRECT] Login error:', error);
+      console.error('[Auth Store] Login error:', error);
       set({ loading: false, error: error.message });
       throw error;
     }
@@ -63,8 +66,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   register: async (email, password) => {
     set({ loading: true, error: null });
     try {
-      // RADICAL FIX: Call our direct auth endpoint
-      const response = await fetch('/api/auth-direct/register', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -73,26 +75,26 @@ export const useAuthStore = create<AuthState>((set) => ({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Registration failed');
+        throw new Error(data.detail || 'Registration failed');
       }
 
-      const token = data.token;
-      const user = data.user;
-
-      console.log('[Auth Store - DIRECT] Registration successful, token:', token ? 'Present' : 'Missing');
+      const token = data.access_token;
 
       if (token) {
         localStorage.setItem('access_token', token);
-        console.log('[Auth Store - DIRECT] Token saved to localStorage');
       }
 
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(window.atob(base64));
+
       set({
-        user: { id: user.id, email: user.email } as any,
+        user: { id: payload.sub, email: email } as any,
         isAuthenticated: true,
         loading: false
       });
     } catch (error: any) {
-      console.error('[Auth Store - DIRECT] Registration error:', error);
+      console.error('[Auth Store] Registration error:', error);
       set({ loading: false, error: error.message });
       throw error;
     }
@@ -107,14 +109,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   checkAuthStatus: async () => {
     set({ loading: true });
 
-    // RADICAL FIX: Only check localStorage, don't call any server-side session API
     const storedToken = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
 
-    if (storedToken && storedToken.length > 20) {
-      console.log("[Auth Store - DIRECT] Valid token found in localStorage");
-
+    if (storedToken && storedToken.split('.').length === 3) {
       try {
-        // Decode JWT payload (Part 2) to get User ID
         const base64Url = storedToken.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
         const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
@@ -122,24 +120,19 @@ export const useAuthStore = create<AuthState>((set) => ({
         }).join(''));
 
         const payload = JSON.parse(jsonPayload);
-        const userId = payload.sub; // 'sub' contains the user ID in our backend
+        const userId = payload.sub;
 
         set({
           isAuthenticated: true,
           loading: false,
-          user: { id: userId, email: payload.email || 'user@system' } as any
+          user: { id: userId, email: payload.email || 'operator@neural.net' } as any
         });
-        console.log("[Auth Store - DIRECT] User restored from token:", userId);
-
       } catch (e) {
         console.error("Failed to decode token:", e);
-        // If decode fails, logout to be safe
         localStorage.removeItem('access_token');
         set({ user: null, isAuthenticated: false, loading: false });
       }
-
     } else {
-      console.log("[Auth Store - DIRECT] No valid token, user must login");
       set({ user: null, isAuthenticated: false, loading: false });
     }
   },

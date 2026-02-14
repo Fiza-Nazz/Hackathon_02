@@ -2,8 +2,13 @@ import React, { useState } from 'react';
 import { useTasks } from '@/store/tasks';
 import { Task } from '@/types';
 import { motion } from 'framer-motion';
-import { CheckCircle, Circle, Trash2, Edit3, Save, X, Clock } from 'lucide-react';
+import { CheckCircle, Circle, Trash2, Edit3, Save, X, Clock, Tag, Calendar, AlertTriangle } from 'lucide-react';
 import { cn } from '@/utils/cn';
+
+// Helper function to check if task is overdue
+const isOverdue = (dueDate: string): boolean => {
+  return new Date(dueDate) < new Date();
+};
 
 interface TaskItemProps {
   task: Task;
@@ -45,6 +50,24 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
     }
   };
 
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'text-red-500';
+      case 'medium': return 'text-yellow-500';
+      case 'low': return 'text-green-500';
+      default: return 'text-gray-600';
+    }
+  };
+
+  const getPriorityIcon = (priority: string) => {
+    switch (priority) {
+      case 'high': return '🔴';
+      case 'medium': return '🟡';
+      case 'low': return '🟢';
+      default: return '⚪';
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
@@ -60,8 +83,9 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
       task.completed
         ? "bg-white/[0.02] border-white/5 opacity-60"
         : "glass-morphism border-white/10 hover:border-electric-blue/50",
-      !task.completed && task.priority === 3 && "border-red-500/30 bg-red-500/[0.02]",
-      !task.completed && task.priority === 2 && "border-yellow-500/30 bg-yellow-500/[0.02]"
+      !task.completed && task.priority === 'high' && "border-red-500/30 bg-red-500/[0.02]",
+      !task.completed && task.priority === 'medium' && "border-yellow-500/30 bg-yellow-500/[0.02]",
+      !task.completed && task.due_date && isOverdue(task.due_date) && "border-red-600/50 bg-red-600/[0.05]"
     )}>
       {isEditing ? (
         <div className="space-y-4">
@@ -98,7 +122,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
               ) : (
                 <Circle className={cn(
                   "transition-colors",
-                  task.priority === 3 ? "text-red-500" : task.priority === 2 ? "text-yellow-500" : "text-gray-600"
+                  getPriorityColor(task.priority || 'low')
                 )} size={24} />
               )}
             </button>
@@ -111,9 +135,16 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
                 )}>
                   {task.title}
                 </h3>
+                <span className="text-sm">{getPriorityIcon(task.priority || 'low')}</span>
                 {task.category && (
                   <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest text-gray-500">
                     {task.category}
+                  </span>
+                )}
+                {task.due_date && isOverdue(task.due_date) && !task.completed && (
+                  <span className="px-2 py-0.5 rounded-md bg-red-500/20 border border-red-500/30 text-[9px] font-black uppercase tracking-widest text-red-400 flex items-center gap-1">
+                    <AlertTriangle size={10} />
+                    OVERDUE
                   </span>
                 )}
               </div>
@@ -126,13 +157,37 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
                 </p>
               )}
 
+              {/* Tags Display */}
+              {task.tags && task.tags.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {task.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-electric-blue/10 border border-electric-blue/20 text-[10px] font-bold text-electric-blue"
+                    >
+                      <Tag size={8} />
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+
               <div className="mt-4 flex items-center space-x-4 text-[10px] uppercase tracking-widest font-black text-gray-700">
                 <div className="flex items-center space-x-1">
                   <Clock size={12} />
-                  <span>{formatDate(task.created_at)}</span>
+                  <span>Created {formatDate(task.created_at)}</span>
                 </div>
-                {task.priority === 3 && <span className="text-red-500/50">CRITICAL</span>}
-                {task.priority === 2 && <span className="text-yellow-500/50">ELEVATED</span>}
+                {task.due_date && (
+                  <div className={cn(
+                    "flex items-center space-x-1",
+                    isOverdue(task.due_date) && !task.completed ? "text-red-400" : "text-gray-600"
+                  )}>
+                    <Calendar size={12} />
+                    <span>Due {formatDate(task.due_date)}</span>
+                  </div>
+                )}
+                {task.priority === 'high' && <span className="text-red-500/50">CRITICAL</span>}
+                {task.priority === 'medium' && <span className="text-yellow-500/50">ELEVATED</span>}
                 {task.completed && <span className="text-electric-blue/50">ARCHIVED</span>}
               </div>
             </div>
